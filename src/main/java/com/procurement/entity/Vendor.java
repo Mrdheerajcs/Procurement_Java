@@ -28,6 +28,9 @@ public class Vendor extends BaseEntity {
     @Column(name = "vendor_type_id", nullable = false)
     private Long vendorTypeId;
 
+    @Column(name = "user_id")
+    private Long userId;
+
     @Column(name = "contact_person")
     private String contactPerson;
 

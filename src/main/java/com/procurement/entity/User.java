@@ -22,6 +22,7 @@ public class User {
 
     private Boolean isActive = true;
     private Boolean isAccountNonLocked = true;
+    private Boolean isPasswordChanged = false;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
