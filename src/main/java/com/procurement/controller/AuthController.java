@@ -1,0 +1,111 @@
+package com.procurement.controller;
+import com.procurement.dto.*;
+import com.procurement.entity.Role;
+import com.procurement.entity.User;
+import com.procurement.jwt.JwtUtil;
+import com.procurement.mapper.UserMapper;
+import com.procurement.repository.RoleRepository;
+import com.procurement.repository.UserRepository;
+import com.procurement.util.ResponseUtil;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Collections;
+
+@Slf4j
+@RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
+    private final UserMapper userMapper;
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<UserDTO>> register(@Valid @RequestBody RegisterRequest request) {
+        log.info("Registering new user: {}", request.getUsername());
+
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            return ResponseUtil.error(HttpStatus.BAD_REQUEST, "Username already exists!");
+        }
+
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            return ResponseUtil.error(HttpStatus.BAD_REQUEST, "Email already exists!");
+        }
+
+        User user = userMapper.toEntity(request);
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+
+        Role role = roleRepository.findByRoleName("ROLE_USER")
+                .orElseThrow(() -> new RuntimeException("Default role not found"));
+        user.setRoles(Collections.singleton(role));
+
+        User savedUser = userRepository.save(user);
+
+        return ResponseUtil.success(userMapper.toDto(savedUser), "User registered successfully!");
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+        log.info("Login attempt for user: {}", request.getUsername());
+
+        Authentication authentication = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        String token = jwtUtil.generateToken(authentication);
+
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        AuthResponse response = AuthResponse.builder()
+                .token(token)
+                .tokenType("Bearer")
+                .expiresIn(28800000L) // 8 hours in milliseconds
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .roles(user.getRoles().stream().map(Role::getRoleName).toList())
+                .build();
+
+        return ResponseUtil.success(response, "Login successful!");
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.substring(7);
+        if (!jwtUtil.validateToken(token)) {
+            return ResponseUtil.error(HttpStatus.UNAUTHORIZED, "Invalid or expired token");
+        }
+
+        String username = jwtUtil.extractUsername(token);
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String newToken = jwtUtil.generateToken(username);
+
+        AuthResponse response = AuthResponse.builder()
+                .token(newToken)
+                .tokenType("Bearer")
+                .expiresIn(28800000L)
+                .userId(user.getUserId())
+                .username(user.getUsername())
+                .build();
+
+        return ResponseUtil.success(response, "Token refreshed successfully!");
+    }
+}
