@@ -83,8 +83,8 @@ public class MprMapper {
         dto.setJustification(mprHeader.getJustification());
         dto.setStatus(mprHeader.getStatus());
 
-        dto.setCreatedBy(mprHeader.getCreatedBy());
-        dto.setUpdatedBy(mprHeader.getUpdatedBy());
+//        dto.setCreatedBy(mprHeader.getCreatedBy());
+//        dto.setUpdatedBy(mprHeader.getUpdatedBy());
         dto.setLastUpdatedDt(mprHeader.getLastUpdatedDt());
 
         return dto;

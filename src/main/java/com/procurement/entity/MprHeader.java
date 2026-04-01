@@ -62,27 +62,27 @@ public class MprHeader extends BaseEntity {
         @Column(name = "status")
         private String status;
 
-        @Column(name = "created_by")
-        private Long createdBy;
-
-        @Column(name = "updated_by")
-        private Long updatedBy;
-
-        @Column(name = "last_updated_dt")
-        private LocalDateTime lastUpdatedDt;
+//        @Column(name = "created_by")
+//        private Long createdBy;
+//
+//        @Column(name = "updated_by")
+//        private Long updatedBy;
+//
+//        @Column(name = "last_updated_dt")
+//        private LocalDateTime lastUpdatedDt;
 
         @Column(name = "created_at")
         private LocalDateTime createdAt;
         // 🔧 Auto set timestamps
-        @PrePersist
-        public void prePersist() {
-            this.createdAt = LocalDateTime.now();
-            this.lastUpdatedDt = LocalDateTime.now();
-        }
-        @PreUpdate
-        public void preUpdate() {
-            this.lastUpdatedDt = LocalDateTime.now();
-        }
+//        @PrePersist
+//        public void prePersist() {
+//            this.createdAt = LocalDateTime.now();
+//            this.lastUpdatedDt = LocalDateTime.now();
+//        }
+//        @PreUpdate
+//        public void preUpdate() {
+//            this.lastUpdatedDt = LocalDateTime.now();
+//        }
 
         // Getters & Setters
     }
