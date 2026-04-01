@@ -1,0 +1,13 @@
+package com.example.procurement_java;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+public class ProcurementJavaApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(ProcurementJavaApplication.class, args);
+    }
+
+}
