@@ -1,7 +1,7 @@
 package com.procurement.mapper;
 
-import com.procurement.dto.RegisterRequest;
-import com.procurement.dto.UserDTO;
+import com.procurement.dto.request.RegisterRequest;
+import com.procurement.dto.responce.UserDTO;
 import com.procurement.entity.User;
 import org.springframework.stereotype.Component;
 

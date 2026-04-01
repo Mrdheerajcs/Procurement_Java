@@ -1,6 +1,6 @@
 package com.procurement.jwt;
 
-import com.procurement.dto.ApiResponse;
+import com.procurement.dto.responce.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

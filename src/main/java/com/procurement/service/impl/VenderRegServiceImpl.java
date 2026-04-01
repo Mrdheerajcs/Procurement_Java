@@ -1,7 +1,7 @@
 package com.procurement.service.impl;
 
-import com.procurement.dto.ApiResponse;
-import com.procurement.dto.VenderDto;
+import com.procurement.dto.responce.ApiResponse;
+import com.procurement.dto.responce.VenderDto;
 import com.procurement.dto.request.VenderRegRequest;
 import com.procurement.entity.Vendor;
 import com.procurement.helper.CurrentUser;

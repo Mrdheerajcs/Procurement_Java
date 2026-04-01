@@ -1,6 +1,6 @@
 package com.procurement.util;
 
-import com.procurement.dto.ApiResponse;
+import com.procurement.dto.responce.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 

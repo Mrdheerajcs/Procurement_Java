@@ -1,4 +1,4 @@
-package com.procurement.dto;
+package com.procurement.dto.request;
 
 import lombok.Getter;
 import lombok.Setter;

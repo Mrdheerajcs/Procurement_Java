@@ -1,4 +1,4 @@
-package com.procurement.dto;
+package com.procurement.dto.responce;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

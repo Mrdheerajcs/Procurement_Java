@@ -1,4 +1,4 @@
-package com.procurement.dto;
+package com.procurement.dto.responce;
 
 import lombok.Data;
 import java.util.List;

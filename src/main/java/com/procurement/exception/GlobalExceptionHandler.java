@@ -1,7 +1,7 @@
 // GlobalExceptionHandler.java
 package com.procurement.exception;
 
-import com.procurement.dto.ApiResponse;
+import com.procurement.dto.responce.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
