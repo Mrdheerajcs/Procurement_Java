@@ -1,28 +1,57 @@
 package com.procurement.controller;
+
 import com.procurement.dto.ApiResponse;
+import com.procurement.dto.VenderDto;
 import com.procurement.dto.request.VenderRegRequest;
-import com.procurement.dto.responce.AppsetupResponse;
 import com.procurement.service.VendorRegService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/vendors")
 @RequiredArgsConstructor
 public class VendorController {
-  @Autowired
-  VendorRegService vendorRegService;
+
+    private final VendorRegService vendorRegService;
+
     @PostMapping("/registration")
-    public ResponseEntity<ApiResponse<AppsetupResponse>> venderReg(@RequestBody VenderRegRequest venderRegRequest) {
-        log.info("Vender Registering......");
-        return new ResponseEntity<>(vendorRegService.venReg(venderRegRequest), HttpStatus.OK);
+    public ResponseEntity<ApiResponse<VenderDto>> venderReg(@RequestBody VenderRegRequest request) {
+        log.info("Registering vendor...");
+        return vendorRegService.venReg(request);
     }
 
+    @PutMapping("/{vendorId}")
+    public ResponseEntity<ApiResponse<VenderDto>> updateVendor(@PathVariable Long vendorId, @RequestBody VenderRegRequest request) {
+        log.info("Updating vendor ID: {}", vendorId);
+        return vendorRegService.updateVendor(vendorId, request);
+    }
+
+    @GetMapping("/{vendorId}")
+    public ResponseEntity<ApiResponse<VenderDto>> getVendorById(@PathVariable Long vendorId) {
+        log.info("Fetching vendor ID: {}", vendorId);
+        return vendorRegService.getVendorById(vendorId);
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<VenderDto>>> getAllVendors() {
+        log.info("Fetching all vendors...");
+        return vendorRegService.getAllVendors();
+    }
+
+    @DeleteMapping("/{vendorId}")
+    public ResponseEntity<ApiResponse<String>> deleteVendor(@PathVariable Long vendorId) {
+        log.info("Deleting vendor ID: {}", vendorId);
+        return vendorRegService.deleteVendor(vendorId);
+    }
+
+    @PatchMapping("/{vendorId}/status")
+    public ResponseEntity<ApiResponse<VenderDto>> changeVendorStatus(@PathVariable Long vendorId, @RequestParam String status) {
+        log.info("Changing status of vendor ID: {} to {}", vendorId, status);
+        return vendorRegService.changeVendorStatus(vendorId, status);
+    }
 }

@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mas_vendor")
@@ -14,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Vendor extends BaseEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "vendor_id")
@@ -82,24 +82,15 @@ public class Vendor extends BaseEntity {
     @Column(name = "payment_terms_id")
     private Long paymentTermsId;
 
-    @Column(name = "is_preferred", columnDefinition = "char(1) default 'N'")
+    @Column(name = "is_preferred", columnDefinition = "char(1)")
     private String isPreferred = "N";
 
-    @Column(name = "is_blacklisted", columnDefinition = "char(1) default 'N'")
+    @Column(name = "is_blacklisted", columnDefinition = "char(1)")
     private String isBlacklisted = "N";
 
     @Column(name = "blacklist_reason")
     private String blacklistReason;
 
-    @Column(name = "status", columnDefinition = "char(1) default 'Y'")
+    @Column(name = "status", columnDefinition = "char(1)")
     private String status = "Y";
-
-    @Column(name = "created_by")
-    private String createdBy;
-
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @Column(name = "last_updated_dt")
-    private LocalDateTime lastUpdatedDt;
 }

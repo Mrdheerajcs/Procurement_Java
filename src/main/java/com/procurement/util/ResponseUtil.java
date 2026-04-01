@@ -7,8 +7,7 @@ import org.springframework.http.ResponseEntity;
 public class ResponseUtil {
 
     public static <T> ResponseEntity<ApiResponse<T>> success(T data, String message) {
-        ApiResponse<T> response = new ApiResponse<>("SUCCESS", message, data);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new ApiResponse<>("SUCCESS", message, data));
     }
 
     public static <T> ResponseEntity<ApiResponse<T>> success(T data) {
@@ -16,8 +15,8 @@ public class ResponseUtil {
     }
 
     public static <T> ResponseEntity<ApiResponse<T>> error(HttpStatus status, String message) {
-        ApiResponse<T> response = new ApiResponse<>(status.name(), message, null);
-        return ResponseEntity.status(status).body(response);
+        return ResponseEntity.status(status)
+                .body(new ApiResponse<>("ERROR", message, null));
     }
 
     public static <T> ResponseEntity<ApiResponse<T>> error(String message) {

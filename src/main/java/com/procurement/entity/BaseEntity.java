@@ -14,4 +14,16 @@ public abstract class BaseEntity {
 
     @Column(name = "last_updated_dt")
     private LocalDateTime lastUpdatedDt;
+
+    public void setAuditFields(String userName, boolean isNew) {
+        if (isNew) {
+            this.createdBy = userName;
+        }
+        this.updatedBy = userName;
+        this.lastUpdatedDt = java.time.LocalDateTime.now();
+    }
+
+    public String getCreatedBy() { return createdBy; }
+    public String getUpdatedBy() { return updatedBy; }
+    public LocalDateTime getLastUpdatedDt() { return lastUpdatedDt; }
 }
