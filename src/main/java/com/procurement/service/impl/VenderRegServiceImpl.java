@@ -4,6 +4,7 @@ import com.procurement.dto.ApiResponse;
 import com.procurement.dto.VenderDto;
 import com.procurement.dto.request.VenderRegRequest;
 import com.procurement.entity.Vendor;
+import com.procurement.helper.CurrentUser;
 import com.procurement.mapper.VenderMapper;
 import com.procurement.repository.VendorRepository;
 import com.procurement.service.VendorRegService;
@@ -27,6 +28,7 @@ public class VenderRegServiceImpl implements VendorRegService {
     @Transactional
     public ResponseEntity<ApiResponse<VenderDto>> venReg(VenderRegRequest request) {
         Vendor vendor = venderMapper.toEntity(request);
+        vendor.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
         vendorRepository.save(vendor);
         return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor registered successfully");
     }
@@ -37,7 +39,6 @@ public class VenderRegServiceImpl implements VendorRegService {
         Vendor vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
-        // Manual mapping
         vendor.setVendorCode(request.getVendorCode());
         vendor.setVendorName(request.getVendorName());
         vendor.setVendorTypeId(request.getVendorTypeId());
@@ -62,7 +63,7 @@ public class VenderRegServiceImpl implements VendorRegService {
         vendor.setIsPreferred(request.getIsPreferred());
         vendor.setIsBlacklisted(request.getIsBlacklisted());
         vendor.setBlacklistReason(request.getBlacklistReason());
-        vendor.setAuditFields("SYSTEM", false); // Example: replace with actual user
+        vendor.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), false);
 
         vendorRepository.save(vendor);
         return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor updated successfully");
