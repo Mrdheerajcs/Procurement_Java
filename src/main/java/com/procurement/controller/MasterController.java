@@ -26,7 +26,7 @@ public class MasterController {
         return departmentService.create(req);
     }
 
-    @PostMapping("/updateDepartment")
+    @PutMapping("/updateDepartment")
     public ResponseEntity<ApiResponse<DepartmentDto>> updateDepartment(@RequestBody DepartmentRequest req) {
         return departmentService.update(req);
     }
@@ -41,7 +41,7 @@ public class MasterController {
         return departmentService.getAll();
     }
 
-    @PostMapping("/changeDepartmentStatus")
+    @PutMapping("/changeDepartmentStatus")
     public ResponseEntity<ApiResponse<String>> changeDepartmentStatus(@RequestParam Integer id, @RequestParam String status) {
         return departmentService.changeStatus(id, status);
     }
@@ -52,7 +52,7 @@ public class MasterController {
         return mprTypeService.create(req);
     }
 
-    @PostMapping("/updateMprType")
+    @PutMapping("/updateMprType")
     public ResponseEntity<ApiResponse<MprTypeDto>> updateMprType(@RequestBody MprTypeRequest req) {
         return mprTypeService.update(req);
     }
@@ -67,7 +67,7 @@ public class MasterController {
         return mprTypeService.getAll();
     }
 
-    @PostMapping("/changeMprTypeStatus")
+    @PutMapping("/changeMprTypeStatus")
     public ResponseEntity<ApiResponse<String>> changeMprTypeStatus(@RequestParam Long id, @RequestParam String status) {
         return mprTypeService.changeStatus(id, status);
     }
@@ -80,7 +80,7 @@ public class MasterController {
         return roleService.create(req);
     }
 
-    @PostMapping("/updateRole")
+    @PutMapping("/updateRole")
     public ResponseEntity<ApiResponse<RoleDto>> updateRole(@RequestBody RoleRequest req) {
         return roleService.update(req);
     }
@@ -95,7 +95,7 @@ public class MasterController {
         return roleService.getAll();
     }
 
-    @PostMapping("/changeRoleStatus")
+    @PutMapping("/changeRoleStatus")
     public ResponseEntity<ApiResponse<String>> changeRoleStatus(
             @RequestParam Long id,
             @RequestParam String status) {
@@ -110,7 +110,7 @@ public class MasterController {
         return tenderTypeService.create(request);
     }
 
-    @PostMapping("/updateTenderType")
+    @PutMapping("/updateTenderType")
     public ResponseEntity<ApiResponse<TenderTypeDto>> update(@RequestBody TenderTypeRequest request) {
         return tenderTypeService.update(request);
     }
@@ -125,7 +125,7 @@ public class MasterController {
         return tenderTypeService.getAll();
     }
 
-    @PostMapping("/changeTenderTypeStatus")
+    @PutMapping("/changeTenderTypeStatus")
     public ResponseEntity<ApiResponse<String>> changeStatus(
             @RequestParam Long id,
             @RequestParam String status
@@ -141,7 +141,7 @@ public class MasterController {
         return vendorTypeService.create(req);
     }
 
-    @PostMapping("/updateVendorType")
+    @PutMapping("/updateVendorType")
     public ResponseEntity<ApiResponse<VendorTypeDto>> updateVendorType(@RequestBody VendorTypeRequest req) {
         return vendorTypeService.update(req);
     }
@@ -156,7 +156,7 @@ public class MasterController {
         return vendorTypeService.getAll();
     }
 
-    @PostMapping("/changeVendorTypeStatus")
+    @PutMapping("/changeVendorTypeStatus")
     public ResponseEntity<ApiResponse<String>> changeVendorTypeStatus(
             @RequestParam Long id,
             @RequestParam String status) {
