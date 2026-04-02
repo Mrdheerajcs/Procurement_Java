@@ -3,6 +3,7 @@ package com.procurement.mapper;
 import com.procurement.dto.request.MprRequest;
 import com.procurement.dto.responce.MprDto;
 import com.procurement.entity.MprHeader;
+import com.procurement.entity.Priority;
 import com.procurement.repository.DepartmentRepository;
 import com.procurement.repository.MprTypeRepository;
 import com.procurement.repository.TenderTypeRepository;
@@ -28,7 +29,7 @@ public class MprMapper {
         mprHeader.setMprNo(request.getMprNo());
         mprHeader.setMprDate(request.getMprDate());
         mprHeader.setProjectName(request.getProjectName());
-        mprHeader.setPriority(request.getPriority());
+        mprHeader.setPriority(Priority.valueOf(request.getPriority()));
         mprHeader.setRequiredByDate(request.getRequiredByDate());
         mprHeader.setDeliverySchedule(request.getDeliverySchedule());
         mprHeader.setDurationDays(request.getDurationDays());
@@ -75,7 +76,7 @@ public class MprMapper {
         );
 
         dto.setProjectName(mprHeader.getProjectName());
-        dto.setPriority(mprHeader.getPriority());
+        dto.setPriority(String.valueOf(mprHeader.getPriority()));
         dto.setRequiredByDate(mprHeader.getRequiredByDate());
         dto.setDeliverySchedule(mprHeader.getDeliverySchedule());
         dto.setDurationDays(mprHeader.getDurationDays());

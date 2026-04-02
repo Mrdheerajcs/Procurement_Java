@@ -41,8 +41,9 @@ public class MprHeader extends BaseEntity {
         @JoinColumn(name = "tender_type_id")
         private TenderType tenderType;
 
+        @Enumerated(EnumType.STRING)
         @Column(name = "priority")
-        private String priority;
+        private Priority priority;
 
         @Column(name = "required_by_date")
         private LocalDate requiredByDate;
@@ -62,27 +63,8 @@ public class MprHeader extends BaseEntity {
         @Column(name = "status")
         private String status;
 
-//        @Column(name = "created_by")
-//        private Long createdBy;
-//
-//        @Column(name = "updated_by")
-//        private Long updatedBy;
-//
-//        @Column(name = "last_updated_dt")
-//        private LocalDateTime lastUpdatedDt;
 
         @Column(name = "created_at")
         private LocalDateTime createdAt;
-        // 🔧 Auto set timestamps
-//        @PrePersist
-//        public void prePersist() {
-//            this.createdAt = LocalDateTime.now();
-//            this.lastUpdatedDt = LocalDateTime.now();
-//        }
-//        @PreUpdate
-//        public void preUpdate() {
-//            this.lastUpdatedDt = LocalDateTime.now();
-//        }
 
-        // Getters & Setters
     }
