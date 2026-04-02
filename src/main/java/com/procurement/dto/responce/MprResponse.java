@@ -1,20 +1,19 @@
-package com.procurement.dto.request;
+package com.procurement.dto.responce;
 
-import lombok.Getter;
-import lombok.Setter;
+import com.procurement.dto.request.MprDetailRequest;
+import lombok.Data;
+
 import java.time.LocalDate;
 import java.util.List;
 
-
-@Getter
-@Setter
-public class MprRequest {
+@Data
+public class MprResponse {
+    private String mprId;
     private String mprNo;
     private LocalDate mprDate;
-    // Foreign Keys (Only IDs in DTO)
-    private Integer departmentId;
-    private Integer mprTypeId;
-    private Integer tenderTypeId;
+    private long departmentId;
+    private long mprTypeId;
+    private long tenderTypeId;
     private String projectName;
     private String priority;
     private LocalDate requiredByDate;
@@ -22,5 +21,6 @@ public class MprRequest {
     private Integer durationDays;
     private String specialNotes;
     private String justification;
-    private List<MprDetailRequest> mprDetailRequests;
+    private List<MprDetailResponnce> mprDetailResponnces;
 }
+

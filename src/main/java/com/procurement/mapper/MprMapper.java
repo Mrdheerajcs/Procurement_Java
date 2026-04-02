@@ -1,16 +1,20 @@
 package com.procurement.mapper;
 
+import com.procurement.dto.request.MprDetailRequest;
 import com.procurement.dto.request.MprRequest;
 import com.procurement.dto.responce.MprDto;
+import com.procurement.entity.BaseEntity;
+import com.procurement.entity.MprDetail;
 import com.procurement.entity.MprHeader;
 import com.procurement.entity.Priority;
-import com.procurement.repository.DepartmentRepository;
-import com.procurement.repository.MprTypeRepository;
-import com.procurement.repository.TenderTypeRepository;
+import com.procurement.helper.CurrentUser;
+import com.procurement.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.procurement.entity.Priority;
+
 @Component
-public class MprMapper {
+public class MprMapper{
 
     @Autowired
     private DepartmentRepository departmentRepository;
@@ -20,12 +24,14 @@ public class MprMapper {
 
     @Autowired
     private MprTypeRepository mprTypeRepository;
+    @Autowired
+    MprRepository mprRepository;
+
 
     public MprHeader toEntity(MprRequest request) {
         if (request == null) return null;
 
         MprHeader mprHeader = new MprHeader();
-
         mprHeader.setMprNo(request.getMprNo());
         mprHeader.setMprDate(request.getMprDate());
         mprHeader.setProjectName(request.getProjectName());
@@ -51,15 +57,13 @@ public class MprMapper {
                 tenderTypeRepository.findById(Long.valueOf(request.getTenderTypeId()))
                         .orElseThrow(() -> new RuntimeException("Tender Type not found"))
         );
-
         return mprHeader;
     }
-
     public MprDto toDto(MprHeader mprHeader) {
         if (mprHeader == null) return null;
 
         MprDto dto = new MprDto();
-
+        dto.setMprId(mprHeader.getMprId());
         dto.setMprNo(mprHeader.getMprNo());
         dto.setMprDate(mprHeader.getMprDate());
 
@@ -87,6 +91,9 @@ public class MprMapper {
 //        dto.setCreatedBy(mprHeader.getCreatedBy());
 //        dto.setUpdatedBy(mprHeader.getUpdatedBy());
         dto.setLastUpdatedDt(mprHeader.getLastUpdatedDt());
+
+
+
 
         return dto;
     }

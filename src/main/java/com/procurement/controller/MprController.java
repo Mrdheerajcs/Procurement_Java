@@ -2,14 +2,16 @@ package com.procurement.controller;
 import com.procurement.dto.request.MprRequest;
 import com.procurement.dto.responce.ApiResponse;
 import com.procurement.dto.responce.MprDto;
+import com.procurement.dto.responce.MprResponse;
+import com.procurement.dto.responce.VenderDto;
 import com.procurement.service.MprRegServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/mpr")
@@ -20,5 +22,11 @@ public class MprController {
     public ResponseEntity<ApiResponse<MprDto>> mprReg(@RequestBody MprRequest request) {
         log.info("Registering Mpr...");
         return mprRegServices.mprReg(request);
+    }
+
+    @GetMapping("/getall")
+    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprData() {
+        log.info("Fetching all Mpr...");
+        return mprRegServices.getAllMprs();
     }
 }
