@@ -6,8 +6,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "app_role")
-@Getter
-@Setter
+@Getter @Setter
 public class Role {
 
     @Id
@@ -15,4 +14,6 @@ public class Role {
     private Long roleId;
 
     private String roleName;
+
+    private String status = "Y";
 }

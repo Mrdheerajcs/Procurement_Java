@@ -6,8 +6,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "mas_tender_type")
-@Getter
-@Setter
+@Getter @Setter
 public class TenderType {
 
     @Id
@@ -16,4 +15,6 @@ public class TenderType {
 
     private String tenderCode;
     private String tenderName;
+
+    private String status = "Y";
 }

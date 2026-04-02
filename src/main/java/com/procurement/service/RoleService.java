@@ -1,31 +1,21 @@
 package com.procurement.service;
 
-import com.procurement.entity.Role;
-import com.procurement.entity.User;
-import com.procurement.repository.RoleRepository;
-import com.procurement.repository.UserRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.procurement.dto.request.RoleRequest;
+import com.procurement.dto.responce.ApiResponse;
+import com.procurement.dto.responce.RoleDto;
+import org.springframework.http.ResponseEntity;
 
-@Service
-public class RoleService {
+import java.util.List;
 
-    private final UserRepository userRepo;
-    private final RoleRepository roleRepo;
+public interface RoleService {
 
-    public RoleService(UserRepository userRepo, RoleRepository roleRepo) {
-        this.userRepo = userRepo;
-        this.roleRepo = roleRepo;
-    }
+    ResponseEntity<ApiResponse<RoleDto>> create(RoleRequest request);
 
-    @Transactional
-    public void assignRole(Long userId, String roleName) {
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Role role = roleRepo.findByRoleName(roleName)
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+    ResponseEntity<ApiResponse<RoleDto>> update(RoleRequest request);
 
-        user.getRoles().add(role);
-        userRepo.save(user); // changes effective immediately
-    }
+    ResponseEntity<ApiResponse<RoleDto>> getById(Long id);
+
+    ResponseEntity<ApiResponse<List<RoleDto>>> getAll();
+
+    ResponseEntity<ApiResponse<String>> changeStatus(Long id, String status);
 }

@@ -6,8 +6,7 @@ import lombok.Setter;
 
 @Entity
 @Table(name = "mas_vendor_type")
-@Getter
-@Setter
+@Getter @Setter
 public class VendorType {
 
     @Id
@@ -16,4 +15,6 @@ public class VendorType {
 
     private String vendorTypeCode;
     private String vendorTypeName;
+
+    private String status = "Y";
 }
