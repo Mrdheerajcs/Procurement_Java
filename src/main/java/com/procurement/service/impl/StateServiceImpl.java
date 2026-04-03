@@ -19,7 +19,9 @@ public class StateServiceImpl implements StateService {
     @Override
     public List<StateDTO> getStatesByCountryId(Long countryId) {
         List<State> states = stateRepository.findByCountryCountryId(countryId);
-
+        if (states.isEmpty()) {
+            throw new RuntimeException("No data found for given countryId: " + countryId);
+        }
         return states.stream()
                 .map(stateMapper::toDto)
                 .collect(Collectors.toList());
