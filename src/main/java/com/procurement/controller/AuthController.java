@@ -1,4 +1,5 @@
 package com.procurement.controller;
+import com.procurement.dto.request.ChangePasswordRequest;
 import com.procurement.dto.request.LoginRequest;
 import com.procurement.dto.request.RegisterRequest;
 import com.procurement.dto.responce.ApiResponse;
@@ -112,4 +113,21 @@ public class AuthController {
 
         return ResponseUtil.success(response, "Token refreshed successfully!");
     }
+    @PostMapping("/changepassword")
+    public ResponseEntity<?> resetPassword(@RequestBody @Valid ChangePasswordRequest request) {
+        AuthResponse response = new AuthResponse();
+       // logger.info("Password change request...");
+        User user = userRepository.findByUsername(request.getUserName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        // 2. Verify old password
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("Old password is incorrect");
+        }
+        // 3. Set new password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        return ResponseUtil.success(response, "Password change successful!");
+
+    }
+
 }
