@@ -19,6 +19,8 @@ public class MasterController {
     private final TenderTypeService tenderTypeService;
     private final VendorTypeService vendorTypeService;
     private final RoleService roleService;
+    private final CountryService countryService;
+    private final StateService stateService;
 
     // ================== DEPARTMENT ==================
     @PostMapping("/createDepartment")
@@ -162,5 +164,16 @@ public class MasterController {
             @RequestParam String status) {
         return vendorTypeService.changeStatus(id, status);
     }
+// ================== country and state  get Api==================
+@GetMapping("/getAllcountry")
+public ResponseEntity<ApiResponse<List<CountryDto>>> getAllCountry() {
+        return countryService.getAll();
+}
+    @GetMapping("/getStateId/{id}")
+    public List<StateDTO> getState(@PathVariable Long id) {
+        return stateService.getStatesByCountryId(id);
+    }
+
+
 
 }
