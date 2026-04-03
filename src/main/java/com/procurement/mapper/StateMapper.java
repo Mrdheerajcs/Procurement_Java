@@ -36,12 +36,12 @@ public class StateMapper {
         state.setStateName(dto.getStateName());
         state.setStateCode(dto.getStateCode());
         state.setCreatedAt(dto.getCreatedAt());
-        // 🔗 Country mapping (Important)
-        if (dto.getCountryId() != null) {
-            Country country = countryRepository.findById(dto.getCountryId())
-                    .orElseThrow(() -> new RuntimeException("Country not found with id: " + dto.getCountryId()));
-            state.setCountry(country);
-        }
+        //  Country mapping (Important)
+//        if (dto.getCountryId() != null) {
+//            Country country = countryRepository.findById(dto.getCountryId())
+//                    .orElseThrow(() -> new RuntimeException("Country not found with id: " + dto.getCountryId()));
+//            state.setCountry(country);
+//        }
         return state;
     }
 
