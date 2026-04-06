@@ -67,4 +67,10 @@ public class MprDetail extends BaseEntity {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    @Column(name = "approval_date")
+    private LocalDateTime approvalDate;
+
+    @Column(name = "status")
+    private String status;
+
 }

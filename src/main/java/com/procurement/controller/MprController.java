@@ -1,9 +1,7 @@
 package com.procurement.controller;
+import com.procurement.dto.request.MprApprovalRequest;
 import com.procurement.dto.request.MprRequest;
-import com.procurement.dto.responce.ApiResponse;
-import com.procurement.dto.responce.MprDto;
-import com.procurement.dto.responce.MprResponse;
-import com.procurement.dto.responce.VenderDto;
+import com.procurement.dto.responce.*;
 import com.procurement.service.MprRegServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,4 +27,10 @@ public class MprController {
         log.info("Fetching all Mpr...");
         return mprRegServices.getAllMprs();
     }
+    @PutMapping("/approve")
+    public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(@RequestBody MprApprovalRequest request) {
+        log.info("Mpr approval...");
+        return mprRegServices.mprApproval(request);
+    }
+
 }

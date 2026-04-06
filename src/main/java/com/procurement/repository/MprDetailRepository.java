@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface MprDetailRepository extends JpaRepository<MprDetail, Long> {
     List<MprDetail> findByMprHeader(MprHeader headerId);
+    List<MprDetail> findByMprHeaderMprId(Long headerId);
+
 }

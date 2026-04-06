@@ -1,13 +1,12 @@
 package com.procurement.service.impl;
+import com.procurement.dto.request.MprApprovalRequest;
 import com.procurement.dto.request.MprDetailRequest;
 import com.procurement.dto.request.MprRequest;
-import com.procurement.dto.responce.ApiResponse;
-import com.procurement.dto.responce.MprDetailResponnce;
-import com.procurement.dto.responce.MprDto;
-import com.procurement.dto.responce.MprResponse;
+import com.procurement.dto.responce.*;
 import com.procurement.entity.MprDetail;
 import com.procurement.entity.MprHeader;
 import com.procurement.helper.CurrentUser;
+import com.procurement.mapper.MprDetailMapper;
 import com.procurement.mapper.MprMapper;
 import com.procurement.repository.*;
 import com.procurement.service.MprRegServices;
@@ -29,13 +28,8 @@ public class MprRegServicesImpl implements MprRegServices {
     @Autowired
     MprDetailRepository mprDetailRepository;
     @Autowired
-    private DepartmentRepository departmentRepository;
+    private MprDetailMapper mapper;
 
-    @Autowired
-    private TenderTypeRepository tenderTypeRepository;
-
-    @Autowired
-    private MprTypeRepository mprTypeRepository;
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<MprDto>> mprReg(MprRequest request) {
@@ -106,6 +100,19 @@ public class MprRegServicesImpl implements MprRegServices {
             responseList.add(response);
         }
         return ResponseUtil.success(responseList);
+    }
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(MprApprovalRequest request) {
+        List<MprDetail> details = mprDetailRepository.findByMprHeaderMprId(request.getMprId());
+        if (details.isEmpty()) {
+            throw new RuntimeException("No MPR details found for given MPR ID");
+        }
+        for (MprDetail detail : details) {
+            mapper.updateApproval(detail, request);
+        }
+        mprDetailRepository.saveAll(details);
+        return ResponseUtil.success(null, "MPR registered successfully");
     }
 }
 
