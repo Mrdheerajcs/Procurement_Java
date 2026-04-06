@@ -83,6 +83,7 @@ public class AuthController {
                 .expiresIn(28800000L) // 8 hours in milliseconds
                 .userId(user.getUserId())
                 .username(user.getUsername())
+                .isPasswordChanged(user.getIsPasswordChanged())
                 .email(user.getEmail())
                 .roles(user.getRoles().stream().map(Role::getRoleName).toList())
                 .build();
@@ -115,19 +116,19 @@ public class AuthController {
     }
     @PostMapping("/changepassword")
     public ResponseEntity<?> resetPassword(@RequestBody @Valid ChangePasswordRequest request) {
-        AuthResponse response = new AuthResponse();
-       // logger.info("Password change request...");
+
         User user = userRepository.findByUsername(request.getUserName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        // 2. Verify old password
-        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
-            throw new RuntimeException("Old password is incorrect");
-        }
-        // 3. Set new password
-        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
-        return ResponseUtil.success(response, "Password change successful!");
 
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            return ResponseEntity.badRequest().body("Old password is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setIsPasswordChanged(true);
+        userRepository.save(user);
+
+        return ResponseEntity.ok("Password change successful!");
     }
 
 }

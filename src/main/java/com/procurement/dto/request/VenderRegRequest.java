@@ -28,14 +28,15 @@ public class VenderRegRequest {
 
     private String gstNo;
     private String panNo;
-    private String drugLicenseNo;
+    private String registrationNo;
     private LocalDate licenseValidTill;
 
     private String bankName;
     private String accountNo;
     private String ifscCode;
+    private  String bankAddress;
 
-    private Long paymentTermsId;
+    private Long paymentTermsId; //
 
     private String isPreferred;
     private String isBlacklisted;

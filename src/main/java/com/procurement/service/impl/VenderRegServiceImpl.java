@@ -56,7 +56,7 @@ public class VenderRegServiceImpl implements VendorRegService {
 
         vendor.setUserId(user.getUserId());
 
-        vendor.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+        vendor.setAuditFields("self", true);
         vendorRepository.save(vendor);
 
         return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor registered successfully");
@@ -84,7 +84,7 @@ public class VenderRegServiceImpl implements VendorRegService {
         vendor.setPincode(request.getPincode());
         vendor.setGstNo(request.getGstNo());
         vendor.setPanNo(request.getPanNo());
-        vendor.setDrugLicenseNo(request.getDrugLicenseNo());
+        vendor.setDrugLicenseNo(request.getRegistrationNo());
         vendor.setLicenseValidTill(request.getLicenseValidTill());
         vendor.setBankName(request.getBankName());
         vendor.setAccountNo(request.getAccountNo());

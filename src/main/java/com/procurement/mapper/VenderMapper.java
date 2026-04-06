@@ -27,7 +27,7 @@ public class VenderMapper {
         vendor.setPincode(request.getPincode());
         vendor.setGstNo(request.getGstNo());
         vendor.setPanNo(request.getPanNo());
-        vendor.setDrugLicenseNo(request.getDrugLicenseNo());
+        vendor.setDrugLicenseNo(request.getRegistrationNo());
         vendor.setLicenseValidTill(request.getLicenseValidTill());
         vendor.setBankName(request.getBankName());
         vendor.setAccountNo(request.getAccountNo());
