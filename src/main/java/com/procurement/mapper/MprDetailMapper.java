@@ -15,4 +15,16 @@ public class MprDetailMapper {
         entity.setRemarks(dto.getRemarks());
         entity.setApprovalDate(LocalDateTime.now());
     }
+
+    public void mapDtoToEntity(MprDetailDTO dto, MprDetail entity) {
+        entity.setItemCode(dto.getItemCode());
+        entity.setItemName(dto.getItemName());
+        entity.setUom(dto.getUom());
+        entity.setSpecification(dto.getSpecificationn());
+        entity.setRequestedQty(dto.getRequestedQty());
+        entity.setEstimatedRate(dto.getEstimatedRate());
+        entity.setEstimatedValue(dto.getEstimatedValue());
+        entity.setStockAvailable(dto.getStockAvailable());
+        entity.setRemarks(dto.getRemarks());
+    }
 }

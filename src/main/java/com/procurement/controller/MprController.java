@@ -1,13 +1,14 @@
 package com.procurement.controller;
 import com.procurement.dto.request.MprApprovalRequest;
 import com.procurement.dto.request.MprRequest;
+import com.procurement.dto.request.VenderRegRequest;
 import com.procurement.dto.responce.*;
 import com.procurement.service.MprRegServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import com.procurement.dto.request.MprUpdateRequest;
 import java.util.List;
 
 @Slf4j
@@ -21,12 +22,6 @@ public class MprController {
         log.info("Registering Mpr...");
         return mprRegServices.mprReg(request);
     }
-
-//    @GetMapping("/getall")
-//    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprData() {
-//        log.info("Fetching all Mpr...");
-//        return mprRegServices.getAllMprs();
-//    }
     @PutMapping("/approve")
     public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(@RequestBody MprApprovalRequest request) {
         log.info("Mpr approval...");
@@ -40,6 +35,9 @@ public class MprController {
         return mprRegServices.getAllMprs(status);
     }
 
-
+    @PutMapping("/update")
+    public ResponseEntity<ApiResponse<String>> updateMpr(@RequestBody MprUpdateRequest request) {
+        return mprRegServices.updateMpr(request);
+    }
 
 }
