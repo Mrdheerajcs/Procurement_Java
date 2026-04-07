@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface MprRegServices {
     ResponseEntity<ApiResponse<MprDto>> mprReg(MprRequest request);
-    ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprs();
+    ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprs(String status);
 
     ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(MprApprovalRequest request);
 

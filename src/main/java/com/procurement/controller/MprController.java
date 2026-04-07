@@ -22,15 +22,24 @@ public class MprController {
         return mprRegServices.mprReg(request);
     }
 
-    @GetMapping("/getall")
-    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprData() {
-        log.info("Fetching all Mpr...");
-        return mprRegServices.getAllMprs();
-    }
+//    @GetMapping("/getall")
+//    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprData() {
+//        log.info("Fetching all Mpr...");
+//        return mprRegServices.getAllMprs();
+//    }
     @PutMapping("/approve")
     public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(@RequestBody MprApprovalRequest request) {
         log.info("Mpr approval...");
         return mprRegServices.mprApproval(request);
     }
+
+    @GetMapping("/getallbyStatus")
+    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprData(
+            @RequestParam String status) {
+        log.info("Fetching all Mpr with status: {}", status);
+        return mprRegServices.getAllMprs(status);
+    }
+
+
 
 }

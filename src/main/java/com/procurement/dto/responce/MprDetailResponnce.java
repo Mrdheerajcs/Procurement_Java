@@ -20,4 +20,5 @@ public class MprDetailResponnce {
     private BigDecimal avgMonthlyConsumption;
     private String lastPurchaseInfo;
     private String remarks;
+    private String status;
 }
