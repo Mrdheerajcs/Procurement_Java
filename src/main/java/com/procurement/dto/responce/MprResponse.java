@@ -21,6 +21,10 @@ public class MprResponse {
     private Integer durationDays;
     private String specialNotes;
     private String justification;
+
+    private String departmentName;
+    private String mprTypeName;
+    private String tenderTypeName;
     private List<MprDetailResponnce> mprDetailResponnces;
 }
 

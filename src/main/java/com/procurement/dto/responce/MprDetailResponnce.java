@@ -1,9 +1,12 @@
 package com.procurement.dto.responce;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.List;
+
 @Getter
 @Setter
 public class MprDetailResponnce {
@@ -21,4 +24,7 @@ public class MprDetailResponnce {
     private String lastPurchaseInfo;
     private String remarks;
     private String status;
+    private List<VendorDTORes> vendors;
 }
+
+

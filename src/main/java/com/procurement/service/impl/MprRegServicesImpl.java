@@ -47,7 +47,8 @@ public class MprRegServicesImpl implements MprRegServices {
 
     @Autowired
     private MprTypeRepository mprTypeRepository;
-
+   @Autowired
+    VendorRepository  vendorRepository;
 
     @Override
     @Transactional
@@ -96,35 +97,50 @@ public class MprRegServicesImpl implements MprRegServices {
     public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprs(String status) {
         List<MprDetail> details = mprDetailRepository.findByStatusWithHeader(status);
         Map<Long, MprResponse> responseMap = new LinkedHashMap<>();
+        // ✅ 1. Sab detail IDs collect karo
+        List<Long> detailIds = details.stream()
+                .map(MprDetail::getMprDetailId)
+                .collect(Collectors.toList());
+        // ✅ 2. Vendor mappings fetch karo
+        List<MprVendorMapping> mappings = mprVendorMappingRepository.findByMprDetailIds(detailIds);
+        // ✅ 3. Group by mprDetailId
+        Map<Long, List<Long>> vendorMap = mappings.stream()
+                .collect(Collectors.groupingBy(
+                        m -> m.getMprDetailId(),
+                        Collectors.mapping(MprVendorMapping::getVendorId, Collectors.toList())));
+        // ✅ 4. Existing logic
         for (MprDetail detail : details) {
             MprHeader header = detail.getMprHeader();
             Long mprId = header.getMprId();
+
             MprResponse response;
-            // ✅ Agar header already map me hai to reuse karo
+
             if (responseMap.containsKey(mprId)) {
                 response = responseMap.get(mprId);
             } else {
-                // ❗ New header create karo
                 response = new MprResponse();
                 response.setMprId(header.getMprId().toString());
                 response.setMprNo(header.getMprNo());
                 response.setMprDate(header.getMprDate());
-                response.setDepartmentId(header.getDepartment().getDepartmentId());
                 response.setProjectName(header.getProjectName());
+                response.setDepartmentId(header.getDepartment().getDepartmentId());
                 response.setMprTypeId(header.getMprType().getTypeId());
                 response.setTenderTypeId(header.getTenderType().getTenderTypeId());
+                response.setDepartmentName(
+                        departmentRepository.findById(header.getDepartment().getDepartmentId().intValue()).orElse(null).getDepartmentName());
+                response.setMprTypeName(mprTypeRepository.findById(header.getMprType().getTypeId()).orElse(null).getTypeName());
+                response.setTenderTypeName(
+                        tenderTypeRepository.findById(header.getTenderType().getTenderTypeId()).orElse(null).getTenderName());
                 response.setPriority(header.getPriority().toString());
                 response.setRequiredByDate(header.getRequiredByDate());
                 response.setDeliverySchedule(header.getDeliverySchedule());
                 response.setDurationDays(header.getDurationDays());
                 response.setSpecialNotes(header.getSpecialNotes());
                 response.setJustification(header.getJustification());
-
                 response.setMprDetailResponnces(new ArrayList<>());
-
                 responseMap.put(mprId, response);
             }
-            // ✅ Detail add karo
+            // ✅ Detail mapping
             MprDetailResponnce d = new MprDetailResponnce();
             d.setMprDetailId(detail.getMprDetailId());
             d.setSlNo(detail.getSlNo());
@@ -140,6 +156,17 @@ public class MprRegServicesImpl implements MprRegServices {
             d.setLastPurchaseInfo(detail.getLastPurchaseInfo());
             d.setRemarks(detail.getRemarks());
             d.setStatus(detail.getStatus());
+            // VendorIds and name add karo
+            List<Long> vendorIds = vendorMap.getOrDefault(detail.getMprDetailId(), new ArrayList<>());
+            List<VendorDTORes> vendorDTOList = new ArrayList<>();
+            for (Long vendorId : vendorIds) {
+                VendorDTORes v = new VendorDTORes();
+                v.setVendorId(vendorId);
+                v.setVendorName(
+                        vendorRepository.findById(vendorId).orElse(null).getVendorName());
+                vendorDTOList.add(v);
+                d.setVendors(vendorDTOList);
+            }
             response.getMprDetailResponnces().add(d);
         }
         if (responseMap.isEmpty()) {
@@ -147,6 +174,7 @@ public class MprRegServicesImpl implements MprRegServices {
         }
         return ResponseUtil.success(new ArrayList<>(responseMap.values()));
     }
+
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(MprApprovalRequest request) {
@@ -160,61 +188,12 @@ public class MprRegServicesImpl implements MprRegServices {
         mprDetailRepository.saveAll(details);
         return ResponseUtil.success(null, "MPR registered successfully");
     }
-//    @Transactional
-//    @Override
-//    public ResponseEntity<ApiResponse<String>> updateMpr(MprUpdateRequest request) {
-//        // ✅ 1. Fetch Header
-//        MprHeader header = mprRepository.findById(request.getMprId())
-//                .orElseThrow(() -> new RuntimeException("MPR not found"));
-//        // ✅ 2. Update Header fields
-//        header.setMprNo(request.getMprNo());
-//        header.setMprDate(request.getMprDate());
-//        header.setProjectName(request.getProjectName());
-//        header.setPriority(Priority.valueOf(request.getPriority()));
-//        header.setRequiredByDate(request.getRequiredByDate());
-//        header.setDeliverySchedule(request.getDeliverySchedule());
-//        header.setDurationDays(request.getDurationDays());
-//        header.setSpecialNotes(request.getSpecialNotes());
-//        header.setJustification(request.getJustification());
-//       // header.setStatus(request.getStatus());
-//        header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
-//        // Foreign keys (assuming fetch from repo)
-//        header.setDepartment(departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null));
-//        header.setMprType(mprTypeRepository.findById(request.getMprTypeId()).orElse(null));
-//        header.setTenderType(tenderTypeRepository.findById(request.getTenderTypeId()).orElse(null));
-//        mprRepository.save(header);
-//
-//        // ✅ 3. DELETE Details
-//        if (request.getDeleteDetailIds() != null && !request.getDeleteDetailIds().isEmpty()) {
-//            mprDetailRepository.deleteAllById(request.getDeleteDetailIds());
-//        }
-//        // ✅ 4. INSERT / UPDATE Details
-//        for (MprDetailDTO dto : request.getDetails()) {
-//            if (dto.getMprDetailId() == null) {
-//                // ➕ INSERT
-//                MprDetail newDetail = new MprDetail();
-//                mapper.mapDtoToEntity(dto, newDetail);
-//                newDetail.setMprHeader(header);
-//                mprDetailRepository.save(newDetail);
-//            } else {
-//                // 🔄 UPDATE
-//                MprDetail existing = mprDetailRepository.findById(dto.getMprDetailId())
-//                        .orElseThrow(() -> new RuntimeException("Detail not found: " + dto.getMprDetailId()));
-//                mapper.mapDtoToEntity(dto, existing);
-//                mprDetailRepository.save(existing);
-//            }
-//        }
-//        return ResponseUtil.success("MPR Updated Successfully");
-//    }
-
     @Transactional
     @Override
     public ResponseEntity<ApiResponse<String>> updateMpr(MprUpdateRequest request) {
-
         // ✅ 1. FETCH HEADER
         MprHeader header = mprRepository.findById(request.getMprId())
                 .orElseThrow(() -> new RuntimeException("MPR not found"));
-
         // ✅ 2. UPDATE HEADER
         header.setMprNo(request.getMprNo());
         header.setMprDate(request.getMprDate());
