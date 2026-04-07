@@ -17,7 +17,7 @@ public class MprHeader extends BaseEntity {
         @Column(name = "mpr_id")
         private Long mprId;
 
-        @Column(name = "mpr_no", unique = true, nullable = false)
+        @Column(name = "mpr_no")//, unique = true, nullable = false
         private String mprNo;
 
         @Column(name = "mpr_date", nullable = false)
