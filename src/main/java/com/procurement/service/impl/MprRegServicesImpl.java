@@ -72,6 +72,8 @@ public class MprRegServicesImpl implements MprRegServices {
             mprDetail.setLastPurchaseInfo(detail.getLastPurchaseInfo());
             mprDetail.setRemarks(detail.getRemarks());
             mprDetail.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+            mprDetail.setCreatedAt(java.time.LocalDateTime.now());
+            mprDetail.setStatus("n");
             mprDetailRepository.save(mprDetail);
             // 3. 🔥 Vendor Mapping Logic
             if (detail.getVendorIds() != null && !detail.getVendorIds().isEmpty()) {
@@ -88,10 +90,8 @@ public class MprRegServicesImpl implements MprRegServices {
                 mprVendorMappingRepository.saveAll(mappings);
             }
         }
-
         return ResponseUtil.success(mprMapper.toDto(mprHeader), "MPR registered successfully");
     }
-
     @Override
     public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprs(String status) {
         List<MprDetail> details = mprDetailRepository.findByStatusWithHeader(status);

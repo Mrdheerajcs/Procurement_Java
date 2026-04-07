@@ -42,7 +42,7 @@ public class MprMapper{
         mprHeader.setSpecialNotes(request.getSpecialNotes());
         mprHeader.setJustification(request.getJustification());
         mprHeader.setStatus("Y");
-
+        mprHeader.setCreatedAt(java.time.LocalDateTime.now());
         mprHeader.setDepartment(
                 departmentRepository.findById(request.getDepartmentId())
                         .orElseThrow(() -> new RuntimeException("Department not found"))
