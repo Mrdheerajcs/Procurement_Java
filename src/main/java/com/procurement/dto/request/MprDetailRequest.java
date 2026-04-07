@@ -2,6 +2,8 @@ package com.procurement.dto.request;
 import lombok.Getter;
 import lombok.Setter;
 import java.math.BigDecimal;
+import java.util.List;
+
 @Getter
 @Setter
 public class MprDetailRequest {
@@ -17,4 +19,5 @@ public class MprDetailRequest {
     private BigDecimal avgMonthlyConsumption;
     private String lastPurchaseInfo;
     private String remarks;
+    private List<Long> vendorIds;
 }

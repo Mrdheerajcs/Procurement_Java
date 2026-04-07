@@ -23,4 +23,5 @@ public class MprRequest {
     private String specialNotes;
     private String justification;
     private List<MprDetailRequest> mprDetailRequests;
+
 }

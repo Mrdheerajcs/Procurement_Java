@@ -6,6 +6,7 @@ import com.procurement.dto.request.MprUpdateRequest;
 import com.procurement.dto.responce.*;
 import com.procurement.entity.MprDetail;
 import com.procurement.entity.MprHeader;
+import com.procurement.entity.MprVendorMapping;
 import com.procurement.entity.Priority;
 import com.procurement.helper.CurrentUser;
 import com.procurement.mapper.MprDetailMapper;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +35,9 @@ public class MprRegServicesImpl implements MprRegServices {
     MprDetailRepository mprDetailRepository;
     @Autowired
     private MprDetailMapper mapper;
+
+    @Autowired
+    MprVendorMappingRepository mprVendorMappingRepository;
 
     @Autowired
     private DepartmentRepository departmentRepository;
@@ -68,7 +73,22 @@ public class MprRegServicesImpl implements MprRegServices {
             mprDetail.setRemarks(detail.getRemarks());
             mprDetail.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
             mprDetailRepository.save(mprDetail);
+            // 3. 🔥 Vendor Mapping Logic
+            if (detail.getVendorIds() != null && !detail.getVendorIds().isEmpty()) {
+                List<MprVendorMapping> mappings = detail.getVendorIds()
+                        .stream()
+                        .map(vendorId -> {
+                            MprVendorMapping mapping = new MprVendorMapping();
+                            mapping.setMprId(mprHeader.getMprId());
+                            mapping.setMprDetailId(mprDetail.getMprDetailId());
+                            mapping.setVendorId(vendorId);
+                            return mapping;
+                        })
+                        .collect(Collectors.toList());
+                mprVendorMappingRepository.saveAll(mappings);
+            }
         }
+
         return ResponseUtil.success(mprMapper.toDto(mprHeader), "MPR registered successfully");
     }
 
