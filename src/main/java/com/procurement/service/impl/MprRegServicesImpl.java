@@ -160,13 +160,62 @@ public class MprRegServicesImpl implements MprRegServices {
         mprDetailRepository.saveAll(details);
         return ResponseUtil.success(null, "MPR registered successfully");
     }
+//    @Transactional
+//    @Override
+//    public ResponseEntity<ApiResponse<String>> updateMpr(MprUpdateRequest request) {
+//        // ✅ 1. Fetch Header
+//        MprHeader header = mprRepository.findById(request.getMprId())
+//                .orElseThrow(() -> new RuntimeException("MPR not found"));
+//        // ✅ 2. Update Header fields
+//        header.setMprNo(request.getMprNo());
+//        header.setMprDate(request.getMprDate());
+//        header.setProjectName(request.getProjectName());
+//        header.setPriority(Priority.valueOf(request.getPriority()));
+//        header.setRequiredByDate(request.getRequiredByDate());
+//        header.setDeliverySchedule(request.getDeliverySchedule());
+//        header.setDurationDays(request.getDurationDays());
+//        header.setSpecialNotes(request.getSpecialNotes());
+//        header.setJustification(request.getJustification());
+//       // header.setStatus(request.getStatus());
+//        header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+//        // Foreign keys (assuming fetch from repo)
+//        header.setDepartment(departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null));
+//        header.setMprType(mprTypeRepository.findById(request.getMprTypeId()).orElse(null));
+//        header.setTenderType(tenderTypeRepository.findById(request.getTenderTypeId()).orElse(null));
+//        mprRepository.save(header);
+//
+//        // ✅ 3. DELETE Details
+//        if (request.getDeleteDetailIds() != null && !request.getDeleteDetailIds().isEmpty()) {
+//            mprDetailRepository.deleteAllById(request.getDeleteDetailIds());
+//        }
+//        // ✅ 4. INSERT / UPDATE Details
+//        for (MprDetailDTO dto : request.getDetails()) {
+//            if (dto.getMprDetailId() == null) {
+//                // ➕ INSERT
+//                MprDetail newDetail = new MprDetail();
+//                mapper.mapDtoToEntity(dto, newDetail);
+//                newDetail.setMprHeader(header);
+//                mprDetailRepository.save(newDetail);
+//            } else {
+//                // 🔄 UPDATE
+//                MprDetail existing = mprDetailRepository.findById(dto.getMprDetailId())
+//                        .orElseThrow(() -> new RuntimeException("Detail not found: " + dto.getMprDetailId()));
+//                mapper.mapDtoToEntity(dto, existing);
+//                mprDetailRepository.save(existing);
+//            }
+//        }
+//        return ResponseUtil.success("MPR Updated Successfully");
+//    }
+
     @Transactional
     @Override
     public ResponseEntity<ApiResponse<String>> updateMpr(MprUpdateRequest request) {
-        // ✅ 1. Fetch Header
+
+        // ✅ 1. FETCH HEADER
         MprHeader header = mprRepository.findById(request.getMprId())
                 .orElseThrow(() -> new RuntimeException("MPR not found"));
-        // ✅ 2. Update Header fields
+
+        // ✅ 2. UPDATE HEADER
         header.setMprNo(request.getMprNo());
         header.setMprDate(request.getMprDate());
         header.setProjectName(request.getProjectName());
@@ -176,32 +225,61 @@ public class MprRegServicesImpl implements MprRegServices {
         header.setDurationDays(request.getDurationDays());
         header.setSpecialNotes(request.getSpecialNotes());
         header.setJustification(request.getJustification());
-       // header.setStatus(request.getStatus());
         header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
-        // Foreign keys (assuming fetch from repo)
-        header.setDepartment(departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null));
-        header.setMprType(mprTypeRepository.findById(request.getMprTypeId()).orElse(null));
-        header.setTenderType(tenderTypeRepository.findById(request.getTenderTypeId()).orElse(null));
+
+        header.setDepartment(
+                departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null)
+        );
+        header.setMprType(
+                mprTypeRepository.findById(request.getMprTypeId()).orElse(null)
+        );
+        header.setTenderType(
+                tenderTypeRepository.findById(request.getTenderTypeId()).orElse(null)
+        );
         mprRepository.save(header);
 
-        // ✅ 3. DELETE Details
+        // ✅ 3. DELETE DETAILS + THEIR VENDOR MAPPINGS
         if (request.getDeleteDetailIds() != null && !request.getDeleteDetailIds().isEmpty()) {
+
+            for (Long detailId : request.getDeleteDetailIds()) {
+                //  delete vendor mapping first
+                mprVendorMappingRepository.deleteByMprDetailMprDetailId(detailId);
+            }
+            //  delete details
             mprDetailRepository.deleteAllById(request.getDeleteDetailIds());
         }
-        // ✅ 4. INSERT / UPDATE Details
+        // ✅ 4. INSERT / UPDATE DETAILS + VENDOR MAPPING
         for (MprDetailDTO dto : request.getDetails()) {
+            MprDetail detail;
             if (dto.getMprDetailId() == null) {
-                // ➕ INSERT
-                MprDetail newDetail = new MprDetail();
-                mapper.mapDtoToEntity(dto, newDetail);
-                newDetail.setMprHeader(header);
-                mprDetailRepository.save(newDetail);
+                // ➕ INSERT DETAIL
+                detail = new MprDetail();
+                mapper.mapDtoToEntity(dto, detail);
+                detail.setMprHeader(header);
+                mprDetailRepository.save(detail);
+
             } else {
-                // 🔄 UPDATE
-                MprDetail existing = mprDetailRepository.findById(dto.getMprDetailId())
-                        .orElseThrow(() -> new RuntimeException("Detail not found: " + dto.getMprDetailId()));
-                mapper.mapDtoToEntity(dto, existing);
-                mprDetailRepository.save(existing);
+                //  UPDATE DETAIL
+                detail = mprDetailRepository.findById(dto.getMprDetailId())
+                        .orElseThrow(() ->
+                                new RuntimeException("Detail not found: " + dto.getMprDetailId())
+                        );
+                mapper.mapDtoToEntity(dto, detail);
+                mprDetailRepository.save(detail);
+                //  OLD VENDOR MAPPING DELETE
+                mprVendorMappingRepository.deleteByMprDetailMprDetailId(detail.getMprDetailId());
+            }
+            // ✅ INSERT NEW VENDOR MAPPING
+            if (dto.getVendorIds() != null && !dto.getVendorIds().isEmpty()) {
+                List<MprVendorMapping> mappings = new ArrayList<>();
+                for (Long vendorId : dto.getVendorIds()) {
+                    MprVendorMapping mapping = new MprVendorMapping();
+                    mapping.setMprId(header.getMprId());
+                    mapping.setMprDetailId(detail.getMprDetailId());
+                    mapping.setVendorId(vendorId);
+                    mappings.add(mapping);
+                }
+                mprVendorMappingRepository.saveAll(mappings);
             }
         }
         return ResponseUtil.success("MPR Updated Successfully");

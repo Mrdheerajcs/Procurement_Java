@@ -4,6 +4,8 @@ import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+
 @Data
 public class MprDetailDTO {
 
@@ -28,7 +30,7 @@ public class MprDetailDTO {
 //    private LocalDateTime updatedAt;
 //    private LocalDateTime lastUpdatedDt;
     private LocalDateTime approvalDate;
-   private String status;
-
+    private String status;
+    private List<Long> vendorIds;
     // Getters and Setters
 }
