@@ -23,7 +23,7 @@ public class MprUpdateRequest {
     private Integer durationDays;
     private String specialNotes;
     private String justification;
-    private String status;
+    //private String status;
     private List<MprDetailDTO> details;
     private List<Long> deleteDetailIds; // delete ke liye
 }

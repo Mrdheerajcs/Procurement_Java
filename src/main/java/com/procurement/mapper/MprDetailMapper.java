@@ -4,6 +4,7 @@ import com.procurement.dto.request.MprApprovalRequest;
 import com.procurement.dto.responce.MprDetailDTO;
 import com.procurement.dto.responce.MprDto;
 import com.procurement.entity.MprDetail;
+import com.procurement.helper.CurrentUser;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -25,6 +26,9 @@ public class MprDetailMapper {
         entity.setEstimatedRate(dto.getEstimatedRate());
         entity.setEstimatedValue(dto.getEstimatedValue());
         entity.setStockAvailable(dto.getStockAvailable());
+        entity.setStatus(dto.getStatus());
+        entity.setApprovalDate(dto.getApprovalDate());
         entity.setRemarks(dto.getRemarks());
+        entity.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
     }
 }

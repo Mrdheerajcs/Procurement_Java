@@ -156,8 +156,8 @@ public class MprRegServicesImpl implements MprRegServices {
         header.setDurationDays(request.getDurationDays());
         header.setSpecialNotes(request.getSpecialNotes());
         header.setJustification(request.getJustification());
-        header.setStatus(request.getStatus());
-
+       // header.setStatus(request.getStatus());
+        header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
         // Foreign keys (assuming fetch from repo)
         header.setDepartment(departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null));
         header.setMprType(mprTypeRepository.findById(request.getMprTypeId()).orElse(null));
