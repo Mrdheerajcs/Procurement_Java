@@ -25,7 +25,7 @@ public class MprDetail extends BaseEntity {
     @JoinColumn(name = "mpr_id", nullable = false)
     private MprHeader mprHeader;
 
-    @Column(name = "sl_no", nullable = false)
+    @Column(name = "sl_no")//nullable = false
     private Integer slNo;
 
     @Column(name = "item_code", nullable = false)
