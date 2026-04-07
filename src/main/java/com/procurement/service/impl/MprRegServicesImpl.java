@@ -243,7 +243,7 @@ public class MprRegServicesImpl implements MprRegServices {
 
             for (Long detailId : request.getDeleteDetailIds()) {
                 //  delete vendor mapping first
-                mprVendorMappingRepository.deleteByMprDetailMprDetailId(detailId);
+                mprVendorMappingRepository.deleteByMprDetailId(detailId);
             }
             //  delete details
             mprDetailRepository.deleteAllById(request.getDeleteDetailIds());
@@ -267,7 +267,7 @@ public class MprRegServicesImpl implements MprRegServices {
                 mapper.mapDtoToEntity(dto, detail);
                 mprDetailRepository.save(detail);
                 //  OLD VENDOR MAPPING DELETE
-                mprVendorMappingRepository.deleteByMprDetailMprDetailId(detail.getMprDetailId());
+                mprVendorMappingRepository.deleteByMprDetailId(detail.getMprDetailId());
             }
             // ✅ INSERT NEW VENDOR MAPPING
             if (dto.getVendorIds() != null && !dto.getVendorIds().isEmpty()) {

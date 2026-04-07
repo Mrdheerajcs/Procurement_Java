@@ -1,8 +1,15 @@
 package com.procurement.repository;
 import com.procurement.entity.MprVendorMapping;
+import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
-import java.util.List;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+
+@Transactional
 public interface MprVendorMappingRepository extends JpaRepository<MprVendorMapping, Long> {
-    void deleteByMprDetailMprDetailIdIn(List<Long> detailIds);
-    void deleteByMprDetailMprDetailId(Long mprDetailId);
+    @Modifying
+    @Query(value = "DELETE FROM mpr_vendor_mapping WHERE mpr_detail_id = :detailId", nativeQuery = true)
+    void deleteByMprDetailId(@Param("detailId") Long detailId);
 }
