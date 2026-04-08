@@ -1,14 +1,14 @@
 package com.procurement.controller;
-import com.procurement.dto.request.MprApprovalRequest;
-import com.procurement.dto.request.MprRequest;
-import com.procurement.dto.request.VenderRegRequest;
+import com.procurement.dto.request.*;
 import com.procurement.dto.responce.*;
 import com.procurement.service.MprRegServices;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import com.procurement.dto.request.MprUpdateRequest;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -47,5 +47,10 @@ public class MprController {
     public ResponseEntity<ApiResponse<String>> updateMpr(@RequestBody MprUpdateRequest request) {
         return mprRegServices.updateMpr(request);
     }
-
+    @PostMapping("/publish")
+    public ResponseEntity<ApiResponse<String>>publishTender(
+            @RequestPart("data") TenderRequest request,
+            @RequestPart("files") List<MultipartFile> files) throws IOException {
+        return mprRegServices.publishTender(request, files);
+    }
 }

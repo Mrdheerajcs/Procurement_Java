@@ -1,10 +1,7 @@
 package com.procurement.service.impl;
 import com.procurement.dto.request.*;
 import com.procurement.dto.responce.*;
-import com.procurement.entity.MprDetail;
-import com.procurement.entity.MprHeader;
-import com.procurement.entity.MprVendorMapping;
-import com.procurement.entity.Priority;
+import com.procurement.entity.*;
 import com.procurement.helper.CurrentUser;
 import com.procurement.mapper.MprDetailMapper;
 import com.procurement.mapper.MprMapper;
@@ -16,7 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,6 +45,10 @@ public class MprRegServicesImpl implements MprRegServices {
     private MprTypeRepository mprTypeRepository;
    @Autowired
     VendorRepository  vendorRepository;
+   @Autowired
+    TenderHeaderRepository headerRepo;
+   @Autowired
+    TenderDocumentRepository docRepo;
 
     @Override
     @Transactional
@@ -385,6 +389,37 @@ public class MprRegServicesImpl implements MprRegServices {
             }
         }
         return ResponseUtil.success("MPR Updated Successfully");
+    }
+    @Transactional
+    @Override
+    public ResponseEntity<ApiResponse<String>> publishTender (TenderRequest request, List<MultipartFile> files) throws IOException {
+        // ✅ 1. Save Header
+        TenderHeader header = new TenderHeader();
+        header.setMprId(request.getMprId());
+        header.setTenderTitle(request.getTenderTitle());
+        header.setTenderType(request.getTenderType());
+        header.setPublishDate(request.getPublishDate());
+        header.setClosingDate(request.getClosingDate());
+        header.setBidSubmissionEndTime(request.getBidSubmissionEndTime());
+        header.setEmdAmount(request.getEmdAmount());
+        header.setTenderDescription(request.getTenderDescription());
+        header.setStatus("PUBLISHED");
+        header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+        headerRepo.save(header);
+        // ✅ 2. Save Documents
+        for (MultipartFile file : files) {
+            String filePath = "uploads/" + file.getOriginalFilename();
+            // save file locally
+            File dest = new File(filePath);
+            file.transferTo(dest);
+            TenderDocument doc = new TenderDocument();
+            doc.setTenderId(header.getTenderId());
+            doc.setFileName(file.getOriginalFilename());
+            doc.setFilePath(filePath);
+            doc.setFileType(file.getContentType());
+            docRepo.save(doc);
+        }
+          return ResponseUtil.success("Tender Published Successfully");
     }
 }
 
