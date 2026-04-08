@@ -73,4 +73,8 @@ public class MprDetail extends BaseEntity {
     @Column(name = "status")
     private String status;
 
+//    @Column(name = "last_updated_dt")
+//    private LocalDateTime updateddt;
+//    @Column(name = "updated_by")
+//    private String updated_by;
 }

@@ -25,10 +25,10 @@ public class MprDetailDTO {
     private String lastPurchaseInfo;
     private String remarks;
 //    private String createdBy;
-//    private String updatedBy;
+    private String updatedBy;
 //    private LocalDateTime createdAt;
 //    private LocalDateTime updatedAt;
-//    private LocalDateTime lastUpdatedDt;
+   private LocalDateTime lastUpdatedDt;
     private LocalDateTime approvalDate;
     private String status;
     private List<Long> vendorIds;

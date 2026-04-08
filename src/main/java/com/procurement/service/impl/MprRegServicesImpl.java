@@ -1,8 +1,5 @@
 package com.procurement.service.impl;
-import com.procurement.dto.request.MprApprovalRequest;
-import com.procurement.dto.request.MprDetailRequest;
-import com.procurement.dto.request.MprRequest;
-import com.procurement.dto.request.MprUpdateRequest;
+import com.procurement.dto.request.*;
 import com.procurement.dto.responce.*;
 import com.procurement.entity.MprDetail;
 import com.procurement.entity.MprHeader;
@@ -25,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
 @Service
 @RequiredArgsConstructor
 public class MprRegServicesImpl implements MprRegServices {
@@ -178,16 +174,35 @@ public class MprRegServicesImpl implements MprRegServices {
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(MprApprovalRequest request) {
-        List<MprDetail> details = mprDetailRepository.findByMprHeaderMprId(request.getMprId());
-        if (details.isEmpty()) {
-            throw new RuntimeException("No MPR details found for given MPR ID");
+        // 1. Fetch all details for header
+        List<MprDetail> details = mprDetailRepository
+                .findByMprHeaderMprId(request.getMprHeaderId());
+        if (details == null || details.isEmpty()) {
+            throw new RuntimeException("No MPR details found for given Header ID");
         }
+        // 2. Convert list to Map (mprDetailId -> approval object)
+        Map<Long, MprApprovalList> approvalMap = request.getMprApprovalLists()
+                .stream()
+                .collect(Collectors.toMap(
+                        MprApprovalList::getMprdetailId,
+                        d -> d
+                ));
+        // 3. Update matching records
         for (MprDetail detail : details) {
-            mapper.updateApproval(detail, request);
+            MprApprovalList approval = approvalMap.get(detail.getMprDetailId());
+            if (approval != null) {
+                mapper.updateApproval(detail, approval);
+            }
         }
+        // 4. Save all
         mprDetailRepository.saveAll(details);
-        return ResponseUtil.success(null, "MPR registered successfully");
+        // 5. Convert to DTO
+        List<MprDetailDTO> updatedList = details.stream()
+                .map(mapper::toDto)
+                .collect(Collectors.toList());
+        return ResponseUtil.success(null, "Batch MPR approval processed successfully");
     }
+//
     @Transactional
     @Override
     public ResponseEntity<ApiResponse<String>> updateMpr(MprUpdateRequest request) {

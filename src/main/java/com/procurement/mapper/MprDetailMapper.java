@@ -1,20 +1,32 @@
 package com.procurement.mapper;
 
-import com.procurement.dto.request.MprApprovalRequest;
+import com.procurement.dto.request.MprApprovalList;
 import com.procurement.dto.responce.MprDetailDTO;
-import com.procurement.dto.responce.MprDto;
+import com.procurement.entity.BaseEntity;
 import com.procurement.entity.MprDetail;
 import com.procurement.helper.CurrentUser;
 import org.springframework.stereotype.Component;
-
+import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 
 @Component
 public class MprDetailMapper {
-    public void updateApproval(MprDetail entity, MprApprovalRequest dto) {
-        entity.setStatus(dto.getStatus());
-        entity.setRemarks(dto.getRemarks());
+    public void updateApproval(MprDetail entity, MprApprovalList req) {
+        entity.setStatus(req.getStatus());
+        entity.setRemarks(req.getRemarks());
         entity.setApprovalDate(LocalDateTime.now());
+        //entity.setUpdateddt(LocalDateTime.now());
+        entity.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(),false);
+    }
+
+    public MprDetailDTO toDto(MprDetail detail) {
+        MprDetailDTO dto = new MprDetailDTO();
+        dto.setMprDetailId(detail.getMprDetailId());
+       // dto.setLastUpdatedDt(LocalDateTime.now());
+        //dto.setUpdatedBy(CurrentUser.getCurrentUserOrThrow().getUsername());
+        dto.setStatus(detail.getStatus());
+        dto.setRemarks(detail.getRemarks());
+        return dto;
     }
 
     public void mapDtoToEntity(MprDetailDTO dto, MprDetail entity) {
