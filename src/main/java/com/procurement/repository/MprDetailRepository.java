@@ -16,4 +16,7 @@ public interface MprDetailRepository extends JpaRepository<MprDetail, Long> {
     @Query("SELECT d FROM MprDetail d JOIN FETCH d.mprHeader h WHERE LOWER(d.status) = LOWER(:status)")
     List<MprDetail> findByStatusWithHeader(@Param("status") String status);
 
+    @Query("SELECT d FROM MprDetail d JOIN FETCH d.mprHeader WHERE d.status IN :statuses")
+    List<MprDetail> findByMultiStatusWithHeader(@Param("statuses") List<String> statuses);
+
 }

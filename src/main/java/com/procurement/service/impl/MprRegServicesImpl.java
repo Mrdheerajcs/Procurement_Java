@@ -172,6 +172,114 @@ public class MprRegServicesImpl implements MprRegServices {
     }
 
     @Override
+    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprDataByMultiStatus(List<String> statuses) {
+
+        List<MprDetail> details = mprDetailRepository.findByMultiStatusWithHeader(statuses);
+
+        Map<Long, MprResponse> responseMap = new LinkedHashMap<>();
+
+        List<Long> detailIds = details.stream()
+                .map(MprDetail::getMprDetailId)
+                .collect(Collectors.toList());
+
+        List<MprVendorMapping> mappings = mprVendorMappingRepository.findByMprDetailIds(detailIds);
+
+        Map<Long, List<Long>> vendorMap = mappings.stream()
+                .collect(Collectors.groupingBy(
+                        MprVendorMapping::getMprDetailId,
+                        Collectors.mapping(MprVendorMapping::getVendorId, Collectors.toList())
+                ));
+
+        for (MprDetail detail : details) {
+
+            MprHeader header = detail.getMprHeader();
+            Long mprId = header.getMprId();
+
+            MprResponse response;
+
+            if (responseMap.containsKey(mprId)) {
+                response = responseMap.get(mprId);
+            } else {
+                response = new MprResponse();
+
+                response.setMprId(header.getMprId().toString());
+                response.setMprNo(header.getMprNo());
+                response.setMprDate(header.getMprDate());
+                response.setProjectName(header.getProjectName());
+                response.setDepartmentId(header.getDepartment().getDepartmentId());
+                response.setMprTypeId(header.getMprType().getTypeId());
+                response.setTenderTypeId(header.getTenderType().getTenderTypeId());
+
+                response.setDepartmentName(
+                        departmentRepository.findById(header.getDepartment().getDepartmentId().intValue())
+                                .orElse(null).getDepartmentName());
+
+                response.setMprTypeName(
+                        mprTypeRepository.findById(header.getMprType().getTypeId())
+                                .orElse(null).getTypeName());
+
+                response.setTenderTypeName(
+                        tenderTypeRepository.findById(header.getTenderType().getTenderTypeId())
+                                .orElse(null).getTenderName());
+
+                response.setPriority(header.getPriority().toString());
+                response.setRequiredByDate(header.getRequiredByDate());
+                response.setDeliverySchedule(header.getDeliverySchedule());
+                response.setDurationDays(header.getDurationDays());
+                response.setSpecialNotes(header.getSpecialNotes());
+                response.setJustification(header.getJustification());
+
+                response.setMprDetailResponnces(new ArrayList<>());
+
+                responseMap.put(mprId, response);
+            }
+
+            MprDetailResponnce d = new MprDetailResponnce();
+
+            d.setMprDetailId(detail.getMprDetailId());
+            d.setSlNo(detail.getSlNo());
+            d.setItemCode(detail.getItemCode());
+            d.setItemName(detail.getItemName());
+            d.setUom(detail.getUom());
+            d.setSpecification(detail.getSpecification());
+            d.setRequestedQty(detail.getRequestedQty());
+            d.setEstimatedRate(detail.getEstimatedRate());
+            d.setEstimatedValue(detail.getEstimatedValue());
+            d.setStockAvailable(detail.getStockAvailable());
+            d.setAvgMonthlyConsumption(detail.getAvgMonthlyConsumption());
+            d.setLastPurchaseInfo(detail.getLastPurchaseInfo());
+            d.setRemarks(detail.getRemarks());
+            d.setStatus(detail.getStatus());
+
+            List<Long> vendorIds = vendorMap.getOrDefault(detail.getMprDetailId(), new ArrayList<>());
+
+            List<VendorDTORes> vendorDTOList = new ArrayList<>();
+
+            for (Long vendorId : vendorIds) {
+                VendorDTORes v = new VendorDTORes();
+                v.setVendorId(vendorId);
+
+                v.setVendorName(
+                        vendorRepository.findById(vendorId)
+                                .orElse(null).getVendorName()
+                );
+
+                vendorDTOList.add(v);
+            }
+
+            d.setVendors(vendorDTOList);
+
+            response.getMprDetailResponnces().add(d);
+        }
+
+        if (responseMap.isEmpty()) {
+            return ResponseUtil.notFound("No Record Found");
+        }
+
+        return ResponseUtil.success(new ArrayList<>(responseMap.values()));
+    }
+
+    @Override
     @Transactional
     public ResponseEntity<ApiResponse<MprDetailDTO>> mprApproval(MprApprovalRequest request) {
         // 1. Fetch all details for header

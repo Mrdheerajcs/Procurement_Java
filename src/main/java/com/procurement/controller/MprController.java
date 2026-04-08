@@ -35,6 +35,14 @@ public class MprController {
         return mprRegServices.getAllMprs(status);
     }
 
+    @GetMapping("/getallbyMultiStatus")
+    public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprDataByMultiStatus(
+            @RequestParam List<String> status) {
+
+        log.info("Fetching all Mpr with statuses: {}", status);
+        return mprRegServices.getAllMprDataByMultiStatus(status);
+    }
+
     @PutMapping("/update")
     public ResponseEntity<ApiResponse<String>> updateMpr(@RequestBody MprUpdateRequest request) {
         return mprRegServices.updateMpr(request);
