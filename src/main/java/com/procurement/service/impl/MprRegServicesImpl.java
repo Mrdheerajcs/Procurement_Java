@@ -392,8 +392,8 @@ public class MprRegServicesImpl implements MprRegServices {
     }
     @Transactional
     @Override
-    public ResponseEntity<ApiResponse<String>> publishTender (TenderRequest request, List<MultipartFile> files) throws IOException {
-        // ✅ 1. Save Header
+    public ResponseEntity<ApiResponse<String>> publishTender(TenderRequest request, List<MultipartFile> files) throws IOException {
+
         TenderHeader header = new TenderHeader();
         header.setMprId(request.getMprId());
         header.setTenderTitle(request.getTenderTitle());
@@ -405,21 +405,38 @@ public class MprRegServicesImpl implements MprRegServices {
         header.setTenderDescription(request.getTenderDescription());
         header.setStatus("PUBLISHED");
         header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+
         headerRepo.save(header);
-        // ✅ 2. Save Documents
+
+        String uploadDirPath = "C:/uploads/";
+        File uploadDir = new File(uploadDirPath);
+
+        if (!uploadDir.exists()) {
+            uploadDir.mkdirs();
+        }
+
         for (MultipartFile file : files) {
-            String filePath = "uploads/" + file.getOriginalFilename();
-            // save file locally
-            File dest = new File(filePath);
+
+            if (file.isEmpty()) continue;
+
+            String fileName = file.getOriginalFilename();
+
+            // Optional cleanup
+            fileName = fileName.replaceAll("\\s+", "_");
+
+            File dest = new File(uploadDir, fileName);
             file.transferTo(dest);
+
             TenderDocument doc = new TenderDocument();
             doc.setTenderId(header.getTenderId());
-            doc.setFileName(file.getOriginalFilename());
-            doc.setFilePath(filePath);
+            doc.setFileName(fileName);
+            doc.setFilePath(dest.getAbsolutePath());
             doc.setFileType(file.getContentType());
+
             docRepo.save(doc);
         }
-          return ResponseUtil.success("Tender Published Successfully");
+
+        return ResponseUtil.success("Tender Published Successfully");
     }
 }
 
