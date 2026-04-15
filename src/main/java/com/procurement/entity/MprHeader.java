@@ -67,4 +67,25 @@ public class MprHeader extends BaseEntity {
         @Column(name = "created_at")
         private LocalDateTime createdAt;
 
+
+
+        // Multi-level Approval Fields
+        private String approvalLevel;        // MANAGER, FINANCE, DIRECTOR
+        private String approvalStatus;       // PENDING, APPROVED, REJECTED
+        private String approvedByLevel1;     // Manager who approved
+        private LocalDateTime approvedAtLevel1;
+        private String remarksLevel1;
+
+        private String approvedByLevel2;     // Finance who approved
+        private LocalDateTime approvedAtLevel2;
+        private String remarksLevel2;
+
+        private String approvedByLevel3;     // Director who approved
+        private LocalDateTime approvedAtLevel3;
+        private String remarksLevel3;
+
+        private String rejectionReason;
+        private String rejectedBy;
+        private LocalDateTime rejectedAt;
+
     }
