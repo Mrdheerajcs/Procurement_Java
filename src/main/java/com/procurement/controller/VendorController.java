@@ -3,7 +3,12 @@ package com.procurement.controller;
 import com.procurement.dto.responce.ApiResponse;
 import com.procurement.dto.responce.VenderDto;
 import com.procurement.dto.request.VenderRegRequest;
+import com.procurement.entity.Vendor;
+import com.procurement.helper.CurrentUser;
+import com.procurement.mapper.VenderMapper;
+import com.procurement.repository.VendorRepository;
 import com.procurement.service.VendorRegService;
+import com.procurement.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +23,9 @@ import java.util.List;
 public class VendorController {
 
     private final VendorRegService vendorRegService;
+
+    private final VenderMapper venderMapper;
+    private final VendorRepository vendorRepository;
 
     @PostMapping("/registration")
     public ResponseEntity<ApiResponse<VenderDto>> venderReg(@RequestBody VenderRegRequest request) {
@@ -54,4 +62,14 @@ public class VendorController {
         log.info("Changing status of vendor ID: {} to {}", vendorId, status);
         return vendorRegService.changeVendorStatus(vendorId, status);
     }
+
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponse<VenderDto>> getVendorProfile() {
+        log.info("Fetching vendor profile for logged-in user");
+        String username = CurrentUser.getCurrentUserOrThrow().getUsername();
+        Vendor vendor = vendorRepository.findByEmailId(username)
+                .orElseThrow(() -> new RuntimeException("Vendor not found for user: " + username));
+        return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor profile retrieved");
+    }
+
 }

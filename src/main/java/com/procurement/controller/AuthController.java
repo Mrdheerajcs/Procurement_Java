@@ -23,6 +23,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import com.procurement.service.AuditService;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Collections;
 
@@ -36,6 +38,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuditService auditService;
     private final JwtUtil jwtUtil;
     private final UserMapper userMapper;
 
@@ -64,15 +67,21 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         log.info("Login attempt for user: {}", request.getUsername());
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        String clientIp = httpRequest.getRemoteAddr();
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String token = jwtUtil.generateToken(authentication);
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+            );
+
+            auditService.logLogin(request.getUsername(), true, clientIp);
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtUtil.generateToken(authentication);
+
 
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
@@ -89,6 +98,10 @@ public class AuthController {
                 .build();
 
         return ResponseUtil.success(response, "Login successful!");
+        } catch (Exception e) {
+            auditService.logLogin(request.getUsername(), false, clientIp);
+            throw e;
+        }
     }
 
     @PostMapping("/refresh")

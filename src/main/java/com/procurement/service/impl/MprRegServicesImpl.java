@@ -9,6 +9,7 @@ import com.procurement.repository.*;
 import com.procurement.service.MprRegServices;
 import com.procurement.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MprRegServicesImpl implements MprRegServices {
     private final MprMapper mprMapper;
     private final MprRepository mprRepository;
@@ -97,18 +99,14 @@ public class MprRegServicesImpl implements MprRegServices {
     public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprs(String status) {
         List<MprDetail> details = mprDetailRepository.findByStatusWithHeader(status);
         Map<Long, MprResponse> responseMap = new LinkedHashMap<>();
-        // ✅ 1. Sab detail IDs collect karo
         List<Long> detailIds = details.stream()
                 .map(MprDetail::getMprDetailId)
                 .collect(Collectors.toList());
-        // ✅ 2. Vendor mappings fetch karo
         List<MprVendorMapping> mappings = mprVendorMappingRepository.findByMprDetailIds(detailIds);
-        // ✅ 3. Group by mprDetailId
         Map<Long, List<Long>> vendorMap = mappings.stream()
                 .collect(Collectors.groupingBy(
                         m -> m.getMprDetailId(),
                         Collectors.mapping(MprVendorMapping::getVendorId, Collectors.toList())));
-        // ✅ 4. Existing logic
         for (MprDetail detail : details) {
             MprHeader header = detail.getMprHeader();
             Long mprId = header.getMprId();
@@ -344,38 +342,30 @@ public class MprRegServicesImpl implements MprRegServices {
         );
         mprRepository.save(header);
 
-        // ✅ 3. DELETE DETAILS + THEIR VENDOR MAPPINGS
         if (request.getDeleteDetailIds() != null && !request.getDeleteDetailIds().isEmpty()) {
 
             for (Long detailId : request.getDeleteDetailIds()) {
-                //  delete vendor mapping first
                 mprVendorMappingRepository.deleteByMprDetailId(detailId);
             }
-            //  delete details
             mprDetailRepository.deleteAllById(request.getDeleteDetailIds());
         }
-        // ✅ 4. INSERT / UPDATE DETAILS + VENDOR MAPPING
         for (MprDetailDTO dto : request.getDetails()) {
             MprDetail detail;
             if (dto.getMprDetailId() == null) {
-                // ➕ INSERT DETAIL
                 detail = new MprDetail();
                 mapper.mapDtoToEntity(dto, detail);
                 detail.setMprHeader(header);
                 mprDetailRepository.save(detail);
 
             } else {
-                //  UPDATE DETAIL
                 detail = mprDetailRepository.findById(dto.getMprDetailId())
                         .orElseThrow(() ->
                                 new RuntimeException("Detail not found: " + dto.getMprDetailId())
                         );
                 mapper.mapDtoToEntity(dto, detail);
                 mprDetailRepository.save(detail);
-                //  OLD VENDOR MAPPING DELETE
                 mprVendorMappingRepository.deleteByMprDetailId(detail.getMprDetailId());
             }
-            // ✅ INSERT NEW VENDOR MAPPING
             if (dto.getVendorIds() != null && !dto.getVendorIds().isEmpty()) {
                 List<MprVendorMapping> mappings = new ArrayList<>();
                 for (Long vendorId : dto.getVendorIds()) {
@@ -394,50 +384,69 @@ public class MprRegServicesImpl implements MprRegServices {
     @Override
     public ResponseEntity<ApiResponse<String>> publishTender(TenderRequest request, List<MultipartFile> files) throws IOException {
 
+        log.info("Publishing tender for MPR ID: {}", request.getMprId());
+        log.info("Request data: {}", request);
+
         TenderHeader header = new TenderHeader();
         header.setMprId(request.getMprId());
+
+        // Generate Tender Number if not provided
+        String tenderNo = request.getTenderNo();
+        if (tenderNo == null || tenderNo.isEmpty()) {
+            tenderNo = "TND/" + System.currentTimeMillis();
+        }
+        header.setTenderNo(tenderNo);
+
         header.setTenderTitle(request.getTenderTitle());
         header.setTenderType(request.getTenderType());
+
+        // ✅ FIX: Map closing_date to bid_end_date
         header.setPublishDate(request.getPublishDate());
-        header.setClosingDate(request.getClosingDate());
+        header.setBidEndDate(request.getClosingDate());  // closing_date -> bid_end_date
+        header.setBidStartDate(request.getPublishDate()); // Same as publish date
         header.setBidSubmissionEndTime(request.getBidSubmissionEndTime());
         header.setEmdAmount(request.getEmdAmount());
         header.setTenderDescription(request.getTenderDescription());
-        header.setStatus("PUBLISHED");
-        header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
 
-        headerRepo.save(header);
+        // Set additional fields
+        header.setBidOpeningDate(request.getClosingDate()); // Day after closing
+        header.setTenderStatus("PENDING_APPROVAL");  // Changed from PUBLISHED to PENDING_APPROVAL
+        header.setStatus("PENDING_APPROVAL");  // For backward compatibility
 
-        String uploadDirPath = "C:/uploads/";
+        // Set audit fields
+        String currentUser = CurrentUser.getCurrentUserOrThrow().getUsername();
+        header.setAuditFields(currentUser,true);
+
+
+        log.info("Saving tender header: {}", header);
+        TenderHeader saved = headerRepo.save(header);
+        log.info("Tender saved with ID: {}", saved.getTenderId());
+
+        // Save documents
+        String uploadDirPath = "C:/uploads/tenders/" + saved.getTenderId();
         File uploadDir = new File(uploadDirPath);
-
         if (!uploadDir.exists()) {
             uploadDir.mkdirs();
         }
 
         for (MultipartFile file : files) {
-
             if (file.isEmpty()) continue;
 
-            String fileName = file.getOriginalFilename();
-
-            // Optional cleanup
-            fileName = fileName.replaceAll("\\s+", "_");
-
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename().replaceAll("\\s+", "_");
             File dest = new File(uploadDir, fileName);
             file.transferTo(dest);
 
             TenderDocument doc = new TenderDocument();
-            doc.setTenderId(header.getTenderId());
-            doc.setFileName(fileName);
+            doc.setTenderId(saved.getTenderId());
+            doc.setFileName(file.getOriginalFilename());
             doc.setFilePath(dest.getAbsolutePath());
             doc.setFileType(file.getContentType());
-
             docRepo.save(doc);
         }
 
-        return ResponseUtil.success("Tender Published Successfully");
+        return ResponseUtil.success("Tender created successfully and submitted for approval");
     }
+
 }
 
 

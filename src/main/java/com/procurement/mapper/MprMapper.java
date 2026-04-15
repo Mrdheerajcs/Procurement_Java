@@ -1,20 +1,15 @@
 package com.procurement.mapper;
 
-import com.procurement.dto.request.MprDetailRequest;
 import com.procurement.dto.request.MprRequest;
 import com.procurement.dto.responce.MprDto;
-import com.procurement.entity.BaseEntity;
-import com.procurement.entity.MprDetail;
 import com.procurement.entity.MprHeader;
 import com.procurement.entity.Priority;
-import com.procurement.helper.CurrentUser;
 import com.procurement.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import com.procurement.entity.Priority;
 
 @Component
-public class MprMapper{
+public class MprMapper {
 
     @Autowired
     private DepartmentRepository departmentRepository;
@@ -24,9 +19,6 @@ public class MprMapper{
 
     @Autowired
     private MprTypeRepository mprTypeRepository;
-    @Autowired
-    MprRepository mprRepository;
-
 
     public MprHeader toEntity(MprRequest request) {
         if (request == null) return null;
@@ -43,22 +35,33 @@ public class MprMapper{
         mprHeader.setJustification(request.getJustification());
         mprHeader.setStatus("Y");
         mprHeader.setCreatedAt(java.time.LocalDateTime.now());
-        mprHeader.setDepartment(
-                departmentRepository.findById(request.getDepartmentId())
-                        .orElseThrow(() -> new RuntimeException("Department not found"))
-        );
 
-        mprHeader.setMprType(
-                mprTypeRepository.findById(Long.valueOf(request.getMprTypeId()))
-                        .orElseThrow(() -> new RuntimeException("MPR Type not found"))
-        );
+        // ✅ FIX: Convert Integer to Long safely
+        Integer deptId = request.getDepartmentId() != null ? request.getDepartmentId() : null;
+        if (deptId != null) {
+            mprHeader.setDepartment(
+                    departmentRepository.findById(deptId)
+                            .orElseThrow(() -> new RuntimeException("Department not found for ID: " + deptId))
+            );
+        }
 
-        mprHeader.setTenderType(
-                tenderTypeRepository.findById(Long.valueOf(request.getTenderTypeId()))
-                        .orElseThrow(() -> new RuntimeException("Tender Type not found"))
-        );
+        if (request.getMprTypeId() != null) {
+            mprHeader.setMprType(
+                    mprTypeRepository.findById(Long.valueOf(request.getMprTypeId()))
+                            .orElseThrow(() -> new RuntimeException("MPR Type not found for ID: " + request.getMprTypeId()))
+            );
+        }
+
+        if (request.getTenderTypeId() != null) {
+            mprHeader.setTenderType(
+                    tenderTypeRepository.findById(Long.valueOf(request.getTenderTypeId()))
+                            .orElseThrow(() -> new RuntimeException("Tender Type not found for ID: " + request.getTenderTypeId()))
+            );
+        }
+
         return mprHeader;
     }
+
     public MprDto toDto(MprHeader mprHeader) {
         if (mprHeader == null) return null;
 
@@ -87,13 +90,7 @@ public class MprMapper{
         dto.setSpecialNotes(mprHeader.getSpecialNotes());
         dto.setJustification(mprHeader.getJustification());
         dto.setStatus(mprHeader.getStatus());
-
-//        dto.setCreatedBy(mprHeader.getCreatedBy());
-//        dto.setUpdatedBy(mprHeader.getUpdatedBy());
         dto.setLastUpdatedDt(mprHeader.getLastUpdatedDt());
-
-
-
 
         return dto;
     }

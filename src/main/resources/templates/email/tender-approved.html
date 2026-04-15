@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Tender Approved</title>
+</head>
+<body style="font-family: Arial, sans-serif;">
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+    <div style="background: #28a745; color: white; padding: 10px; text-align: center; border-radius: 5px;">
+        <h2>✅ Tender Approved</h2>
+    </div>
+
+    <div style="padding: 20px;">
+        <p>Dear Sir/Madam,</p>
+
+        <p>Your tender has been <strong>APPROVED</strong> and is ready for publication.</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 15px 0;">
+            <tr>
+                <td style="padding: 8px; background: #f5f5f5; width: 40%;"><strong>Tender No:</strong></td>
+                <td style="padding: 8px;" th:text="${tenderNo}">TND/001</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; background: #f5f5f5;"><strong>Title:</strong></td>
+                <td style="padding: 8px;" th:text="${tenderTitle}">Tender Title</td>
+            </tr>
+            <tr>
+                <td style="padding: 8px; background: #f5f5f5;"><strong>Approved By:</strong></td>
+                <td style="padding: 8px;" th:text="${approvedBy}">Admin</td>
+            </tr>
+        </table>
+
+        <p>You can now publish this tender from your dashboard.</p>
+
+        <hr style="margin: 20px 0;">
+        <p style="color: #666; font-size: 12px;">This is an auto-generated email. Please do not reply.</p>
+        <p style="color: #666; font-size: 12px;">© <span th:text="${year}">2026</span> E-Procurement Portal</p>
+    </div>
+</div>
+</body>
+</html>
