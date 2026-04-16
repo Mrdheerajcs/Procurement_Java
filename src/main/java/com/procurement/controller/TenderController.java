@@ -1,9 +1,13 @@
 package com.procurement.controller;
 
 import com.procurement.dto.responce.ApiResponse;
+import com.procurement.entity.Contract;
 import com.procurement.entity.TenderHeader;
+import com.procurement.entity.Vendor;
 import com.procurement.helper.CurrentUser;
+import com.procurement.repository.ContractRepository;
 import com.procurement.repository.TenderHeaderRepository;
+import com.procurement.repository.VendorRepository;
 import com.procurement.service.AuditService;
 import com.procurement.service.EmailService;
 import com.procurement.util.ResponseUtil;
@@ -12,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -26,8 +32,10 @@ public class TenderController {
 
     private final EmailService emailService;
 
-    // ✅ GET all published tenders (for vendor search)
-// ✅ GET all published tenders (for vendor search) - FIXED
+    private final ContractRepository contractRepository;
+    private final VendorRepository vendorRepository;
+
+
     @GetMapping("/published")
     public ResponseEntity<ApiResponse<List<TenderHeader>>> getPublishedTenders() {
         log.info("Fetching all published tenders");
@@ -63,7 +71,6 @@ public class TenderController {
         return ResponseUtil.success(tenders, "Tenders retrieved");
     }
 
-    // ✅ POST award contract to vendor
     @PostMapping("/{tenderId}/award")
     public ResponseEntity<ApiResponse<String>> awardContract(
             @PathVariable Long tenderId,
@@ -73,11 +80,36 @@ public class TenderController {
         TenderHeader tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
 
+        Vendor vendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+
         tender.setTenderStatus("AWARDED");
         tenderRepository.save(tender);
 
+        // ✅ Create contract record
+        Contract contract = Contract.builder()
+                .contractNo("CONT/" + System.currentTimeMillis())
+                .tenderId(tender.getTenderId())
+                .tenderNo(tender.getTenderNo())
+                .tenderTitle(tender.getTenderTitle())
+                .vendorId(vendor.getVendorId())
+                .vendorName(vendor.getVendorName())
+                .awardDate(LocalDate.now())
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusMonths(12))
+                .amount(tender.getEmdAmount() != null ? tender.getEmdAmount() : BigDecimal.ZERO)
+                .status("AWARDED")
+                .createdBy(CurrentUser.getCurrentUserOrThrow().getUsername())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        contractRepository.save(contract);
+
         auditService.log("AWARD_CONTRACT", "TenderHeader", tenderId,
                 null, "Awarded to vendor: " + vendorId);
+
+        // Send email to vendor
+        // emailService.sendContractAwardEmail(vendor.getEmailId(), tender.getTenderNo(), vendor.getVendorName(), contract.getAmount());
 
         return ResponseUtil.success("Contract awarded successfully to vendor", "Success");
     }

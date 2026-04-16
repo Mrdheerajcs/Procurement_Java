@@ -54,6 +54,8 @@ public class BidTechnical {
     @Column(nullable = false, length = 1000)
     private String authorizationDetails;
 
+    private String submissionStatus;  // DRAFT, SUBMITTED, FINAL
+
     private String msmeNumber;
     private Boolean isMsme = false;
 
@@ -69,4 +71,14 @@ public class BidTechnical {
 
     private LocalDateTime submittedAt;
     private LocalDateTime updatedAt;
+
+
+
+    // Clarification fields
+    private String clarificationRequired;     // YES/NO
+    private String clarificationQuestion;     // Question asked to vendor
+    private LocalDateTime clarificationDeadline;  // When vendor must respond
+    private String vendorResponse;            // Vendor's response
+    private LocalDateTime respondedAt;        // When vendor responded
+    private Integer resubmissionCount;        // How many times resubmitted
 }

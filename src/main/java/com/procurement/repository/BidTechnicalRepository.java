@@ -17,14 +17,12 @@ import java.util.Optional;
 public interface BidTechnicalRepository extends JpaRepository<BidTechnical, Long> {
 
     Optional<BidTechnical> findByTenderAndVendor(TenderHeader tender, Vendor vendor);
-
     boolean existsByTenderAndVendor(TenderHeader tender, Vendor vendor);
-
     List<BidTechnical> findByTenderAndEvaluationStatus(TenderHeader tender, String status);
-
     List<BidTechnical> findByTender(TenderHeader tender);
-
     Page<BidTechnical> findByTender(TenderHeader tender, Pageable pageable);
+    List<BidTechnical> findByTenderAndSubmissionStatus(TenderHeader tender, String submissionStatus);
+    List<BidTechnical> findByVendorAndEvaluationStatus(Vendor vendor, String evaluationStatus);
 
     @Query("SELECT b FROM BidTechnical b WHERE b.tender.tenderId = :tenderId AND b.evaluationStatus = 'QUALIFIED'")
     List<BidTechnical> findQualifiedBidsByTenderId(@Param("tenderId") Long tenderId);

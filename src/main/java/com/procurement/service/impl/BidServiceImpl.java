@@ -1,11 +1,14 @@
 package com.procurement.service.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.procurement.dto.request.BidFinalSubmissionRequest;
 import com.procurement.dto.request.BidFinancialRequest;
 import com.procurement.dto.request.BidTechnicalRequest;
+import com.procurement.dto.request.ClarificationRequest;
 import com.procurement.dto.responce.ApiResponse;
 import com.procurement.dto.responce.BidFinancialResponse;
 import com.procurement.dto.responce.BidTechnicalResponse;
+import com.procurement.dto.responce.ClarificationResponse;
 import com.procurement.entity.*;
 import com.procurement.helper.CurrentUser;
 import com.procurement.repository.*;
@@ -51,17 +54,14 @@ public class BidServiceImpl implements BidService {
         Vendor vendor = getCurrentVendor();
         TenderHeader tender = getTenderAndValidate(request.getTenderId());
 
-        // Check if already submitted
         if (bidTechnicalRepository.existsByTenderAndVendor(tender, vendor)) {
             return ResponseUtil.error("Technical bid already submitted for this tender");
         }
 
-        // Check if tender is accepting bids
         if (!isTenderAcceptingBids(tender)) {
             return ResponseUtil.error("Tender is not accepting bids at this time");
         }
 
-        // Save technical bid
         BidTechnical bidTechnical = BidTechnical.builder()
                 .tender(tender)
                 .vendor(vendor)
@@ -75,11 +75,11 @@ public class BidServiceImpl implements BidService {
                 .authorizationDetails(request.getAuthorizationDetails())
                 .msmeNumber(request.getMsmeNumber())
                 .isMsme(request.getIsMsme() != null && request.getIsMsme())
+                .submissionStatus("SUBMITTED")
                 .evaluationStatus("PENDING")
                 .submittedAt(LocalDateTime.now())
                 .build();
 
-        // Save documents
         if (files != null) {
             for (MultipartFile file : files) {
                 saveDocument(file, bidTechnical);
@@ -88,7 +88,6 @@ public class BidServiceImpl implements BidService {
 
         BidTechnical saved = bidTechnicalRepository.save(bidTechnical);
 
-        // Audit log
         auditService.log("SUBMIT_TECHNICAL_BID", "BidTechnical", saved.getBidTechnicalId(),
                 null, objectMapper.valueToTree(saved).toString());
 
@@ -103,7 +102,6 @@ public class BidServiceImpl implements BidService {
         Vendor vendor = getCurrentVendor();
         TenderHeader tender = getTenderAndValidate(request.getTenderId());
 
-        // Verify technical bid exists and is qualified
         BidTechnical bidTechnical = bidTechnicalRepository.findById(request.getBidTechnicalId())
                 .orElseThrow(() -> new RuntimeException("Technical bid not found"));
 
@@ -115,12 +113,10 @@ public class BidServiceImpl implements BidService {
             return ResponseUtil.error("Cannot submit financial bid: Technical bid is not qualified");
         }
 
-        // Check if already submitted
         if (bidFinancialRepository.findByBidTechnical(bidTechnical).isPresent()) {
             return ResponseUtil.error("Financial bid already submitted");
         }
 
-        // Encrypt financial data
         BidFinancial bidFinancial = BidFinancial.builder()
                 .tender(tender)
                 .vendor(vendor)
@@ -138,7 +134,6 @@ public class BidServiceImpl implements BidService {
                 .submittedAt(LocalDateTime.now())
                 .build();
 
-        // Save BOQ file
         if (files != null && files.length > 0) {
             saveFinancialDocument(files[0], bidFinancial);
         }
@@ -162,7 +157,6 @@ public class BidServiceImpl implements BidService {
 
         String oldStatus = bidTechnical.getEvaluationStatus();
 
-        // ✅ FIX: Update the status correctly
         bidTechnical.setEvaluationStatus(status);
         if (score != null) {
             bidTechnical.setEvaluationScore(score);
@@ -182,6 +176,7 @@ public class BidServiceImpl implements BidService {
 
         return ResponseUtil.success(mapToTechnicalResponse(saved), "Technical bid evaluated successfully");
     }
+
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<List<BidFinancialResponse>>> revealFinancialBids(Long tenderId) {
@@ -189,9 +184,6 @@ public class BidServiceImpl implements BidService {
 
         TenderHeader tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
-
-        // Verify current user is authorized (Tender Opening Officer)
-        // This should be role-based check
 
         List<BidTechnical> qualifiedBids = bidTechnicalRepository.findQualifiedBidsByTenderId(tenderId);
 
@@ -225,13 +217,11 @@ public class BidServiceImpl implements BidService {
             return ResponseUtil.success(new ArrayList<>(), "No revealed financial bids found");
         }
 
-        // Decrypt and sort by total cost
         List<BidFinancialResponse> responses = revealedBids.stream()
                 .map(this::mapToFinancialResponse)
                 .sorted(Comparator.comparing(BidFinancialResponse::getTotalCost))
                 .collect(Collectors.toList());
 
-        // Mark L1
         if (!responses.isEmpty()) {
             responses.get(0).setIsRevealed("L1");
         }
@@ -273,8 +263,6 @@ public class BidServiceImpl implements BidService {
             File dest = new File(dir, fileName);
             file.transferTo(dest);
 
-            // Store path in appropriate field based on file type
-            // Simplified: store all in technicalDocPath as comma separated
             if (bidTechnical.getTechnicalDocPath() == null) {
                 bidTechnical.setTechnicalDocPath(dest.getAbsolutePath());
             } else {
@@ -306,12 +294,12 @@ public class BidServiceImpl implements BidService {
         TenderHeader tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
 
-        List<BidTechnical> bids;
+        List<BidTechnical> bids = bidTechnicalRepository.findByTenderAndSubmissionStatus(tender, "SUBMITTED");
 
         if (status != null && !status.isEmpty()) {
-            bids = bidTechnicalRepository.findByTenderAndEvaluationStatus(tender, status);
-        } else {
-            bids = bidTechnicalRepository.findByTender(tender);
+            bids = bids.stream()
+                    .filter(b -> status.equals(b.getEvaluationStatus()))
+                    .collect(Collectors.toList());
         }
 
         List<BidTechnicalResponse> responses = bids.stream()
@@ -327,6 +315,16 @@ public class BidServiceImpl implements BidService {
 
         TenderHeader tender = tenderRepository.findById(tenderId)
                 .orElseThrow(() -> new RuntimeException("Tender not found"));
+
+        List<BidTechnical> allBids = bidTechnicalRepository.findByTenderAndSubmissionStatus(tender, "SUBMITTED");
+
+        boolean allEvaluated = allBids.stream()
+                .allMatch(b -> "QUALIFIED".equals(b.getEvaluationStatus()) || "DISQUALIFIED".equals(b.getEvaluationStatus()));
+
+        if (!allEvaluated) {
+            log.info("Not all vendors evaluated yet. Cannot fetch financial bids.");
+            return ResponseUtil.success(new ArrayList<>(), "Technical evaluation not complete yet. Please evaluate all vendors first.");
+        }
 
         List<BidFinancial> bids = bidFinancialRepository.findByTender(tender);
 
@@ -359,8 +357,13 @@ public class BidServiceImpl implements BidService {
         response.setEvaluationScore(entity.getEvaluationScore());
         response.setEvaluationRemarks(entity.getEvaluationRemarks());
         response.setSubmittedAt(entity.getSubmittedAt());
+        response.setSubmissionStatus(entity.getSubmissionStatus());
+        response.setClarificationQuestion(entity.getClarificationQuestion());
+        response.setClarificationDeadline(entity.getClarificationDeadline());
+        response.setVendorResponse(entity.getVendorResponse());
         return response;
     }
+
     private BidFinancialResponse mapToFinancialResponse(BidFinancial entity) {
         BidFinancialResponse response = new BidFinancialResponse();
         response.setBidFinancialId(entity.getBidFinancialId());
@@ -370,7 +373,6 @@ public class BidServiceImpl implements BidService {
         response.setVendorId(entity.getVendor().getVendorId());
         response.setVendorName(entity.getVendor().getVendorName());
 
-        // Decrypt if revealed
         if ("YES".equals(entity.getIsRevealed())) {
             response.setTotalBidAmount(encryptionUtil.decryptToBigDecimal(entity.getEncryptedTotalBidAmount()));
             response.setGstPercent(encryptionUtil.decryptToBigDecimal(entity.getEncryptedGstPercent()));
@@ -385,5 +387,276 @@ public class BidServiceImpl implements BidService {
         response.setEmdExemptionDetails(entity.getEmdExemptionDetails());
         response.setIsRevealed(entity.getIsRevealed());
         return response;
+    }
+
+
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> saveTechnicalDraft(BidTechnicalRequest request, MultipartFile[] files) {
+        log.info("Saving technical bid as DRAFT for tender: {}", request.getTenderId());
+        log.info("Bidder Turnover received: {}", request.getBidderTurnover());
+        log.info("OEM Turnover received: {}", request.getOemTurnover());
+
+        Vendor vendor = getCurrentVendor();
+        TenderHeader tender = getTenderAndValidate(request.getTenderId());
+
+        Optional<BidTechnical> existing = bidTechnicalRepository.findByTenderAndVendor(tender, vendor);
+
+        BidTechnical bidTechnical;
+        if (existing.isPresent() && "SUBMITTED".equals(existing.get().getSubmissionStatus())) {
+            return ResponseUtil.error("You have already submitted final bid. Cannot edit.");
+        }
+
+        if (existing.isPresent()) {
+            bidTechnical = existing.get();
+            updateTechnicalFields(bidTechnical, request);
+        } else {
+            bidTechnical = BidTechnical.builder()
+                    .tender(tender)
+                    .vendor(vendor)
+                    .submissionStatus("DRAFT")
+                    .build();
+            updateTechnicalFields(bidTechnical, request);
+        }
+
+        if (files != null) {
+            for (MultipartFile file : files) {
+                saveDocument(file, bidTechnical);
+            }
+        }
+
+        BidTechnical saved = bidTechnicalRepository.save(bidTechnical);
+        log.info("Saved Bidder Turnover: {}", saved.getBidderTurnover());
+        log.info("Saved OEM Turnover: {}", saved.getOemTurnover());
+
+        return ResponseUtil.success(mapToTechnicalResponse(saved), "Technical bid saved as draft");
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<BidFinancialResponse>> submitFinalBid(BidFinalSubmissionRequest request, MultipartFile[] files) {
+        log.info("Submitting final bid for tender: {}", request.getTenderId());
+
+        Vendor vendor = getCurrentVendor();
+        TenderHeader tender = getTenderAndValidate(request.getTenderId());
+
+        // Get or create technical bid
+        BidTechnical bidTechnical = bidTechnicalRepository.findByTenderAndVendor(tender, vendor)
+                .orElse(new BidTechnical());
+
+        // Update technical fields
+        updateTechnicalFields(bidTechnical, request);
+        bidTechnical.setTender(tender);
+        bidTechnical.setVendor(vendor);
+        bidTechnical.setSubmissionStatus("SUBMITTED");
+        bidTechnical.setEvaluationStatus("PENDING");
+        bidTechnical.setSubmittedAt(LocalDateTime.now());
+
+        bidTechnicalRepository.save(bidTechnical);
+
+        BidFinancial bidFinancial = BidFinancial.builder()
+                .tender(tender)
+                .vendor(vendor)
+                .bidTechnical(bidTechnical)
+                .encryptedTotalBidAmount(encryptionUtil.encrypt(request.getTotalBidAmount().toString()))
+                .encryptedGstPercent(encryptionUtil.encrypt(request.getGstPercent().toString()))
+                .encryptedTotalCost(encryptionUtil.encrypt(request.getTotalCost().toString()))
+                .encryptedBankName(encryptionUtil.encrypt(request.getBankName()))
+                .encryptedAccountNumber(encryptionUtil.encrypt(request.getAccountNumber()))
+                .encryptedIfscCode(encryptionUtil.encrypt(request.getIfscCode()))
+                .encryptedEmdNumber(request.getEmdNumber() != null ? encryptionUtil.encrypt(request.getEmdNumber()) : null)
+                .encryptedEmdValue(request.getEmdValue() != null ? encryptionUtil.encrypt(request.getEmdValue().toString()) : null)
+                .emdExemptionDetails(request.getEmdExemptionDetails())
+                .isRevealed("NO")
+                .submittedAt(LocalDateTime.now())
+                .build();
+
+        if (files != null && files.length > 0) {
+            saveFinancialDocument(files[0], bidFinancial);
+        }
+
+        BidFinancial saved = bidFinancialRepository.save(bidFinancial);
+
+        auditService.log("SUBMIT_FINAL_BID", "BidFinancial", saved.getBidFinancialId(),
+                null, "Final bid submitted");
+
+        return ResponseUtil.success(mapToFinancialResponse(saved), "Bid submitted successfully!");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getPendingTechnicalBids(Long tenderId) {
+        log.info("Getting pending technical bids for tender: {}", tenderId);
+
+        TenderHeader tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+
+        List<BidTechnical> bids = bidTechnicalRepository.findByTenderAndSubmissionStatus(tender, "SUBMITTED");
+
+        List<BidTechnicalResponse> responses = bids.stream()
+                .map(this::mapToTechnicalResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtil.success(responses, "Pending technical bids retrieved");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Boolean>> areAllVendorsEvaluated(Long tenderId) {
+        TenderHeader tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+
+        List<BidTechnical> bids = bidTechnicalRepository.findByTenderAndSubmissionStatus(tender, "SUBMITTED");
+
+        boolean allEvaluated = bids.stream()
+                .allMatch(b -> "QUALIFIED".equals(b.getEvaluationStatus()) || "DISQUALIFIED".equals(b.getEvaluationStatus()));
+
+        return ResponseUtil.success(allEvaluated, allEvaluated ? "All vendors evaluated" : "Some vendors pending");
+    }
+
+    private void updateTechnicalFields(BidTechnical bidTechnical, BidTechnicalRequest request) {
+        bidTechnical.setCompanyName(request.getCompanyName());
+        bidTechnical.setGstNumber(request.getGstNumber());
+        bidTechnical.setPanNumber(request.getPanNumber());
+        bidTechnical.setMakeIndiaClass(request.getMakeIndiaClass());
+
+        if (request.getBidderTurnover() != null) {
+            bidTechnical.setBidderTurnover(request.getBidderTurnover());
+        }
+        if (request.getOemTurnover() != null) {
+            bidTechnical.setOemTurnover(request.getOemTurnover());
+        }
+
+        bidTechnical.setOemName(request.getOemName());
+        bidTechnical.setAuthorizationDetails(request.getAuthorizationDetails());
+        bidTechnical.setMsmeNumber(request.getMsmeNumber());
+        bidTechnical.setIsMsme(request.getIsMsme() != null && request.getIsMsme());
+    }
+
+    private void updateTechnicalFields(BidTechnical bidTechnical, BidFinalSubmissionRequest request) {
+        bidTechnical.setCompanyName(request.getCompanyName());
+        bidTechnical.setGstNumber(request.getGstNumber());
+        bidTechnical.setPanNumber(request.getPanNumber());
+        bidTechnical.setMakeIndiaClass(request.getMakeIndiaClass());
+
+        if (request.getBidderTurnover() != null) {
+            bidTechnical.setBidderTurnover(request.getBidderTurnover());
+        }
+        if (request.getOemTurnover() != null) {
+            bidTechnical.setOemTurnover(request.getOemTurnover());
+        }
+
+        bidTechnical.setOemName(request.getOemName());
+        bidTechnical.setAuthorizationDetails(request.getAuthorizationDetails());
+        bidTechnical.setMsmeNumber(request.getMsmeNumber());
+        bidTechnical.setIsMsme(request.getIsMsme() != null && request.getIsMsme());
+    }
+
+
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> requestClarification(ClarificationRequest request) {
+        log.info("Requesting clarification for bid: {}", request.getBidTechnicalId());
+
+        BidTechnical bid = bidTechnicalRepository.findById(request.getBidTechnicalId())
+                .orElseThrow(() -> new RuntimeException("Bid not found"));
+
+        bid.setEvaluationStatus("CLARIFICATION_NEEDED");
+        bid.setClarificationRequired("YES");
+        bid.setClarificationQuestion(request.getQuestion());
+        bid.setClarificationDeadline(request.getDeadline());
+        bid.setResubmissionCount((bid.getResubmissionCount() == null ? 0 : bid.getResubmissionCount()) + 1);
+
+        BidTechnical saved = bidTechnicalRepository.save(bid);
+
+        auditService.log("REQUEST_CLARIFICATION", "BidTechnical", request.getBidTechnicalId(),
+                null, request.getQuestion(), "Deadline: " + request.getDeadline());
+
+        return ResponseUtil.success(mapToTechnicalResponse(saved), "Clarification requested");
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(ClarificationResponse request) {
+        log.info("Submitting clarification response for bid: {}", request.getBidTechnicalId());
+
+        BidTechnical bid = bidTechnicalRepository.findById(request.getBidTechnicalId())
+                .orElseThrow(() -> new RuntimeException("Bid not found"));
+
+        if (bid.getClarificationDeadline() != null &&
+                LocalDateTime.now().isAfter(bid.getClarificationDeadline())) {
+            return ResponseUtil.error("Deadline has passed. Cannot submit response.");
+        }
+
+        bid.setVendorResponse(request.getResponse());
+        bid.setRespondedAt(LocalDateTime.now());
+        bid.setEvaluationStatus("PENDING");
+
+        BidTechnical saved = bidTechnicalRepository.save(bid);
+
+        auditService.log("SUBMIT_CLARIFICATION", "BidTechnical", request.getBidTechnicalId(),
+                null, request.getResponse(), null);
+
+        return ResponseUtil.success(mapToTechnicalResponse(saved), "Clarification response submitted");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> getBidDetails(Long bidTechnicalId) {
+        log.info("Getting bid details: {}", bidTechnicalId);
+
+        BidTechnical bid = bidTechnicalRepository.findById(bidTechnicalId)
+                .orElseThrow(() -> new RuntimeException("Bid not found"));
+
+        return ResponseUtil.success(mapToTechnicalResponse(bid), "Bid details retrieved");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> getTechnicalDraft(Long tenderId) {
+        log.info("Getting technical draft for tender: {}", tenderId);
+
+        Vendor vendor = getCurrentVendor();
+        TenderHeader tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+
+        Optional<BidTechnical> existing = bidTechnicalRepository.findByTenderAndVendor(tender, vendor);
+
+        if (existing.isPresent() && "DRAFT".equals(existing.get().getSubmissionStatus())) {
+            return ResponseUtil.success(mapToTechnicalResponse(existing.get()), "Draft retrieved");
+        }
+
+        return ResponseUtil.success(null, "No draft found");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getPendingClarifications() {
+        log.info("Getting pending clarifications for vendor");
+
+        Vendor vendor = getCurrentVendor();
+
+        List<BidTechnical> pendingClarifications = bidTechnicalRepository
+                .findByVendorAndEvaluationStatus(vendor, "CLARIFICATION_NEEDED");
+
+        List<BidTechnicalResponse> responses = pendingClarifications.stream()
+                .map(this::mapToTechnicalResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtil.success(responses, "Pending clarifications retrieved");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<Boolean>> hasVendorParticipated(Long tenderId) {
+        try {
+            Vendor vendor = getCurrentVendor();
+            TenderHeader tender = tenderRepository.findById(tenderId)
+                    .orElseThrow(() -> new RuntimeException("Tender not found"));
+
+            Optional<BidTechnical> existing = bidTechnicalRepository.findByTenderAndVendor(tender, vendor);
+
+            boolean hasParticipated = existing.isPresent() &&
+                    ("SUBMITTED".equals(existing.get().getSubmissionStatus()) ||
+                            "DRAFT".equals(existing.get().getSubmissionStatus()));
+
+            return ResponseUtil.success(hasParticipated, "Participation status retrieved");
+        } catch (RuntimeException e) {
+            return ResponseUtil.success(false, "Not participated");
+        }
     }
 }

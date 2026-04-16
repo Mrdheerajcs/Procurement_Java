@@ -26,4 +26,9 @@ public class BidTechnicalResponse {
     private Integer evaluationScore;
     private String evaluationRemarks;
     private LocalDateTime submittedAt;
+
+    private String submissionStatus;
+    private String clarificationQuestion;
+    private LocalDateTime clarificationDeadline;
+    private String vendorResponse;            // Vendor's response
 }
