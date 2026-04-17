@@ -1,10 +1,12 @@
 package com.procurement.controller;
 
 import com.procurement.dto.responce.ApiResponse;
+import com.procurement.entity.BidTechnical;
 import com.procurement.entity.Contract;
 import com.procurement.entity.TenderHeader;
 import com.procurement.entity.Vendor;
 import com.procurement.helper.CurrentUser;
+import com.procurement.repository.BidTechnicalRepository;
 import com.procurement.repository.ContractRepository;
 import com.procurement.repository.TenderHeaderRepository;
 import com.procurement.repository.VendorRepository;
@@ -34,6 +36,8 @@ public class TenderController {
 
     private final ContractRepository contractRepository;
     private final VendorRepository vendorRepository;
+
+    private final BidTechnicalRepository bidTechnicalRepository;
 
 
     @GetMapping("/published")
@@ -71,48 +75,48 @@ public class TenderController {
         return ResponseUtil.success(tenders, "Tenders retrieved");
     }
 
-    @PostMapping("/{tenderId}/award")
-    public ResponseEntity<ApiResponse<String>> awardContract(
-            @PathVariable Long tenderId,
-            @RequestParam Long vendorId) {
-        log.info("Awarding tender {} to vendor {}", tenderId, vendorId);
-
-        TenderHeader tender = tenderRepository.findById(tenderId)
-                .orElseThrow(() -> new RuntimeException("Tender not found"));
-
-        Vendor vendor = vendorRepository.findById(vendorId)
-                .orElseThrow(() -> new RuntimeException("Vendor not found"));
-
-        tender.setTenderStatus("AWARDED");
-        tenderRepository.save(tender);
-
-        // ✅ Create contract record
-        Contract contract = Contract.builder()
-                .contractNo("CONT/" + System.currentTimeMillis())
-                .tenderId(tender.getTenderId())
-                .tenderNo(tender.getTenderNo())
-                .tenderTitle(tender.getTenderTitle())
-                .vendorId(vendor.getVendorId())
-                .vendorName(vendor.getVendorName())
-                .awardDate(LocalDate.now())
-                .startDate(LocalDate.now())
-                .endDate(LocalDate.now().plusMonths(12))
-                .amount(tender.getEmdAmount() != null ? tender.getEmdAmount() : BigDecimal.ZERO)
-                .status("AWARDED")
-                .createdBy(CurrentUser.getCurrentUserOrThrow().getUsername())
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        contractRepository.save(contract);
-
-        auditService.log("AWARD_CONTRACT", "TenderHeader", tenderId,
-                null, "Awarded to vendor: " + vendorId);
-
-        // Send email to vendor
-        // emailService.sendContractAwardEmail(vendor.getEmailId(), tender.getTenderNo(), vendor.getVendorName(), contract.getAmount());
-
-        return ResponseUtil.success("Contract awarded successfully to vendor", "Success");
-    }
+//    @PostMapping("/{tenderId}/award")
+//    public ResponseEntity<ApiResponse<String>> awardContract(
+//            @PathVariable Long tenderId,
+//            @RequestParam Long vendorId) {
+//        log.info("Awarding tender {} to vendor {}", tenderId, vendorId);
+//
+//        TenderHeader tender = tenderRepository.findById(tenderId)
+//                .orElseThrow(() -> new RuntimeException("Tender not found"));
+//
+//        Vendor vendor = vendorRepository.findById(vendorId)
+//                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+//
+//        tender.setTenderStatus("AWARDED");
+//        tenderRepository.save(tender);
+//
+//        // ✅ Create contract record
+//        Contract contract = Contract.builder()
+//                .contractNo("CONT/" + System.currentTimeMillis())
+//                .tenderId(tender.getTenderId())
+//                .tenderNo(tender.getTenderNo())
+//                .tenderTitle(tender.getTenderTitle())
+//                .vendorId(vendor.getVendorId())
+//                .vendorName(vendor.getVendorName())
+//                .awardDate(LocalDate.now())
+//                .startDate(LocalDate.now())
+//                .endDate(LocalDate.now().plusMonths(12))
+//                .amount(tender.getEmdAmount() != null ? tender.getEmdAmount() : BigDecimal.ZERO)
+//                .status("AWARDED")
+//                .createdBy(CurrentUser.getCurrentUserOrThrow().getUsername())
+//                .createdAt(LocalDateTime.now())
+//                .build();
+//
+//        contractRepository.save(contract);
+//
+//        auditService.log("AWARD_CONTRACT", "TenderHeader", tenderId,
+//                null, "Awarded to vendor: " + vendorId);
+//
+//        // Send email to vendor
+//        // emailService.sendContractAwardEmail(vendor.getEmailId(), tender.getTenderNo(), vendor.getVendorName(), contract.getAmount());
+//
+//        return ResponseUtil.success("Contract awarded successfully to vendor", "Success");
+//    }
 
 
     // ✅ Get tenders by status (for approval list)
@@ -224,5 +228,67 @@ public class TenderController {
         auditService.log("PUBLISH_TENDER", "TenderHeader", tenderId, "APPROVED", "PUBLISHED", null);
 
         return ResponseUtil.success(saved, "Tender published successfully");
+    }
+
+    @PostMapping("/{tenderId}/award")
+    public ResponseEntity<ApiResponse<String>> awardContract(
+            @PathVariable Long tenderId,
+            @RequestParam Long vendorId) {
+        log.info("Awarding tender {} to vendor {}", tenderId, vendorId);
+
+        TenderHeader tender = tenderRepository.findById(tenderId)
+                .orElseThrow(() -> new RuntimeException("Tender not found"));
+
+        Vendor awardedVendor = vendorRepository.findById(vendorId)
+                .orElseThrow(() -> new RuntimeException("Vendor not found"));
+
+        tender.setTenderStatus("AWARDED");
+        tenderRepository.save(tender);
+
+        // Create contract record
+        Contract contract = Contract.builder()
+                .contractNo("CONT/" + System.currentTimeMillis())
+                .tenderId(tender.getTenderId())
+                .tenderNo(tender.getTenderNo())
+                .tenderTitle(tender.getTenderTitle())
+                .vendorId(awardedVendor.getVendorId())
+                .vendorName(awardedVendor.getVendorName())
+                .awardDate(LocalDate.now())
+                .startDate(LocalDate.now())
+                .endDate(LocalDate.now().plusMonths(12))
+                .amount(tender.getEmdAmount() != null ? tender.getEmdAmount() : BigDecimal.ZERO)
+                .status("AWARDED")
+                .createdBy(CurrentUser.getCurrentUserOrThrow().getUsername())
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        contractRepository.save(contract);
+
+        // ✅ Send notification to ALL vendors who participated
+        List<BidTechnical> allBids = bidTechnicalRepository.findByTender(tender);
+        for (BidTechnical bid : allBids) {
+            if (bid.getVendor().getVendorId().equals(vendorId)) {
+                // Winner email
+                emailService.sendContractAwardEmail(
+                        bid.getVendor().getEmailId(),
+                        tender.getTenderNo(),
+                        bid.getVendor().getVendorName(),
+                        contract.getAmount()
+                );
+            } else {
+                // Loser email
+                emailService.sendTenderResultEmail(
+                        bid.getVendor().getEmailId(),
+                        tender.getTenderNo(),
+                        tender.getTenderTitle(),
+                        "Unfortunately, you were not selected. The contract was awarded to " + awardedVendor.getVendorName()
+                );
+            }
+        }
+
+        auditService.log("AWARD_CONTRACT", "TenderHeader", tenderId,
+                null, "Awarded to vendor: " + vendorId);
+
+        return ResponseUtil.success("Contract awarded successfully to vendor", "Success");
     }
 }

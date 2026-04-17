@@ -7,4 +7,6 @@ public interface EmailService {
     void sendTenderRejectionEmail(String toEmail, String tenderNo, String tenderTitle, String reason);
     void sendBidSubmissionConfirmation(String toEmail, String tenderNo, String vendorName);
     void sendContractAwardEmail(String toEmail, String tenderNo, String vendorName, BigDecimal amount);
+
+    void sendTenderResultEmail(String toEmail, String tenderNo, String tenderTitle, String message);
 }

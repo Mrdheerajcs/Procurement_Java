@@ -124,9 +124,11 @@ public class BidController {
     }
 
     @PostMapping("/technical/clarification/response")
-    public ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(@RequestBody ClarificationResponse request) {
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(
+            @RequestPart("data") ClarificationResponse request,
+            @RequestPart(value = "file", required = false) MultipartFile file) {
         log.info("API: Submit clarification response");
-        return bidService.submitClarificationResponse(request);
+        return bidService.submitClarificationResponse(request, file);
     }
 
     @GetMapping("/technical/details/{bidTechnicalId}")
@@ -151,5 +153,19 @@ public class BidController {
     public ResponseEntity<ApiResponse<Boolean>> hasVendorParticipated(@PathVariable Long tenderId) {
         log.info("API: Check if vendor participated in tender: {}", tenderId);
         return bidService.hasVendorParticipated(tenderId);
+    }
+
+    @PutMapping("/withdraw/{bidTechnicalId}")
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> withdrawBid(
+            @PathVariable Long bidTechnicalId,
+            @RequestParam String reason) {
+        log.info("API: Withdraw bid: {}", bidTechnicalId);
+        return bidService.withdrawBid(bidTechnicalId, reason);
+    }
+
+    @GetMapping("/my-bids")
+    public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getMyBids() {
+        log.info("API: Get my bids");
+        return bidService.getMyBids();
     }
 }

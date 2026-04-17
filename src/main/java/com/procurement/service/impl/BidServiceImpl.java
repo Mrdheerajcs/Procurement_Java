@@ -25,7 +25,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -575,7 +574,9 @@ public class BidServiceImpl implements BidService {
 
     @Override
     @Transactional
-    public ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(ClarificationResponse request) {
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(
+            ClarificationResponse request,
+            MultipartFile file) {
         log.info("Submitting clarification response for bid: {}", request.getBidTechnicalId());
 
         BidTechnical bid = bidTechnicalRepository.findById(request.getBidTechnicalId())
@@ -590,6 +591,12 @@ public class BidServiceImpl implements BidService {
         bid.setRespondedAt(LocalDateTime.now());
         bid.setEvaluationStatus("PENDING");
 
+        // ✅ Save document if uploaded
+        if (file != null && !file.isEmpty()) {
+            String documentPath = saveClarificationDocument(file, bid);
+            bid.setClarificationDocumentPath(documentPath);
+        }
+
         BidTechnical saved = bidTechnicalRepository.save(bid);
 
         auditService.log("SUBMIT_CLARIFICATION", "BidTechnical", request.getBidTechnicalId(),
@@ -598,6 +605,20 @@ public class BidServiceImpl implements BidService {
         return ResponseUtil.success(mapToTechnicalResponse(saved), "Clarification response submitted");
     }
 
+    private String saveClarificationDocument(MultipartFile file, BidTechnical bid) {
+        try {
+            File dir = new File(UPLOAD_DIR + "clarification/" + bid.getBidTechnicalId());
+            if (!dir.exists()) dir.mkdirs();
+
+            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename();
+            File dest = new File(dir, fileName);
+            file.transferTo(dest);
+            return dest.getAbsolutePath();
+        } catch (IOException e) {
+            log.error("Error saving clarification document: {}", e.getMessage());
+            return null;
+        }
+    }
     @Override
     public ResponseEntity<ApiResponse<BidTechnicalResponse>> getBidDetails(Long bidTechnicalId) {
         log.info("Getting bid details: {}", bidTechnicalId);
@@ -650,13 +671,55 @@ public class BidServiceImpl implements BidService {
 
             Optional<BidTechnical> existing = bidTechnicalRepository.findByTenderAndVendor(tender, vendor);
 
+            // ✅ Only return true if FINAL submitted (not just draft)
             boolean hasParticipated = existing.isPresent() &&
-                    ("SUBMITTED".equals(existing.get().getSubmissionStatus()) ||
-                            "DRAFT".equals(existing.get().getSubmissionStatus()));
+                    "SUBMITTED".equals(existing.get().getSubmissionStatus());
 
             return ResponseUtil.success(hasParticipated, "Participation status retrieved");
         } catch (RuntimeException e) {
             return ResponseUtil.success(false, "Not participated");
         }
+    }
+
+    @Override
+    @Transactional
+    public ResponseEntity<ApiResponse<BidTechnicalResponse>> withdrawBid(Long bidTechnicalId, String reason) {
+        log.info("Withdrawing bid: {} with reason: {}", bidTechnicalId, reason);
+
+        BidTechnical bid = bidTechnicalRepository.findById(bidTechnicalId)
+                .orElseThrow(() -> new RuntimeException("Bid not found"));
+
+        Vendor vendor = getCurrentVendor();
+        if (!bid.getVendor().getVendorId().equals(vendor.getVendorId())) {
+            return ResponseUtil.error("You can only withdraw your own bids");
+        }
+
+        if (!"PENDING".equals(bid.getEvaluationStatus())) {
+            return ResponseUtil.error("Cannot withdraw bid that is already evaluated");
+        }
+
+        bid.setEvaluationStatus("WITHDRAWN");
+        bid.setEvaluationRemarks("Withdrawn by vendor. Reason: " + reason);
+
+        BidTechnical saved = bidTechnicalRepository.save(bid);
+
+        auditService.log("WITHDRAW_BID", "BidTechnical", bidTechnicalId,
+                null, reason, "Bid withdrawn by vendor");
+
+        return ResponseUtil.success(mapToTechnicalResponse(saved), "Bid withdrawn successfully");
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getMyBids() {
+        log.info("Getting all bids for logged-in vendor");
+
+        Vendor vendor = getCurrentVendor();
+        List<BidTechnical> bids = bidTechnicalRepository.findByVendor(vendor);
+
+        List<BidTechnicalResponse> responses = bids.stream()
+                .map(this::mapToTechnicalResponse)
+                .collect(Collectors.toList());
+
+        return ResponseUtil.success(responses, "Your bids retrieved");
     }
 }

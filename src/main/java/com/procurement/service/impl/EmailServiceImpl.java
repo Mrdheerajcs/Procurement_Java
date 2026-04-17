@@ -104,4 +104,22 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send email: {}", e.getMessage());
         }
     }
+
+
+    @Override
+    public void sendTenderResultEmail(String toEmail, String tenderNo, String tenderTitle, String message) {
+        try {
+            Context context = new Context();
+            context.setVariable("tenderNo", tenderNo);
+            context.setVariable("tenderTitle", tenderTitle);
+            context.setVariable("message", message);
+            context.setVariable("year", java.time.Year.now().getValue());
+
+            String htmlContent = templateEngine.process("email/tender-result", context);
+            sendHtmlEmail(toEmail, "Tender Result - " + tenderNo, htmlContent);
+            log.info("Tender result email sent to: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Failed to send tender result email: {}", e.getMessage());
+        }
+    }
 }

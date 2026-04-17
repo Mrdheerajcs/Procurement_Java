@@ -57,7 +57,7 @@ public class AuthController {
         User user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        Role role = roleRepository.findByRoleName("ROLE_USER")
+        Role role = roleRepository.findByRoleName("PROCUREMENT_USER")
                 .orElseThrow(() -> new RuntimeException("Default role not found"));
         user.setRoles(Collections.singleton(role));
 

@@ -25,7 +25,7 @@ public class AuditController {
     private final AuditLogRepository auditLogRepository;
 
     @GetMapping("/logs")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('PROCUREMENT_ADMIN')")
     public ResponseEntity<ApiResponse<Page<AuditLog>>> getAllLogs(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
@@ -55,14 +55,14 @@ public class AuditController {
     }
 
     @GetMapping("/logs/recent")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('PROCUREMENT_ADMIN')")
     public ResponseEntity<ApiResponse<List<AuditLog>>> getRecentLogs() {
         List<AuditLog> logs = auditLogRepository.findTop100ByOrderByTimestampDesc();
         return ResponseUtil.success(logs, "Recent audit logs retrieved");
     }
 
     @GetMapping("/logs/entity/{entityType}/{entityId}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("hasAuthority('PROCUREMENT_ADMIN')")
     public ResponseEntity<ApiResponse<Page<AuditLog>>> getLogsByEntity(
             @PathVariable String entityType,
             @PathVariable Long entityId,

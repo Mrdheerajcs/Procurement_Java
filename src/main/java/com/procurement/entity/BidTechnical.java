@@ -73,6 +73,8 @@ public class BidTechnical {
     private LocalDateTime updatedAt;
 
 
+    private String clarificationDocumentPath;
+
 
     // Clarification fields
     private String clarificationRequired;     // YES/NO

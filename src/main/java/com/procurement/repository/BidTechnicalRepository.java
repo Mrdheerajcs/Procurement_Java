@@ -29,4 +29,6 @@ public interface BidTechnicalRepository extends JpaRepository<BidTechnical, Long
 
     @Query("SELECT bt FROM BidTechnical bt WHERE bt.tender.tenderId = :tenderId")
     List<BidTechnical> findAllByTenderId(@Param("tenderId") Long tenderId);
+
+    List<BidTechnical> findByVendor(Vendor vendor);
 }

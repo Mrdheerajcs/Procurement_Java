@@ -10,6 +10,7 @@ import com.procurement.dto.responce.BidTechnicalResponse;
 import com.procurement.dto.responce.ClarificationResponse;
 import com.procurement.entity.BidTechnical;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -32,9 +33,18 @@ public interface BidService {
     ResponseEntity<ApiResponse<BidTechnicalResponse>> getTechnicalDraft(Long tenderId);
 
     ResponseEntity<ApiResponse<BidTechnicalResponse>> requestClarification(ClarificationRequest request);
-    ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(ClarificationResponse request);
+
+    @Transactional
+    ResponseEntity<ApiResponse<BidTechnicalResponse>> submitClarificationResponse(
+            ClarificationResponse request,
+            MultipartFile file);
+
     ResponseEntity<ApiResponse<BidTechnicalResponse>> getBidDetails(Long bidTechnicalId);
     ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getPendingClarifications();
 
     ResponseEntity<ApiResponse<Boolean>> hasVendorParticipated(Long tenderId);
+
+
+    ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getMyBids();
+    ResponseEntity<ApiResponse<BidTechnicalResponse>> withdrawBid(Long bidTechnicalId, String reason);
 }

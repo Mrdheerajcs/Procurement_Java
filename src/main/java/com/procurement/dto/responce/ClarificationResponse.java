@@ -6,4 +6,6 @@ import lombok.Data;
 public class ClarificationResponse {
     private Long bidTechnicalId;
     private String response;
+
+    private String documentPath;
 }
