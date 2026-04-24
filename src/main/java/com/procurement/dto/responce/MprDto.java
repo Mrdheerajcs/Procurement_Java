@@ -2,6 +2,7 @@ package com.procurement.dto.responce;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -23,6 +24,9 @@ public class MprDto {
     private String specialNotes;
     private String justification;
     private String status;
+
+
+    private BigDecimal totalValue;
 
     private Long createdBy;
     private Long updatedBy;

@@ -1,8 +1,7 @@
 package com.procurement.dto.responce;
 
-import com.procurement.dto.request.MprDetailRequest;
 import lombok.Data;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -21,10 +20,10 @@ public class MprResponse {
     private Integer durationDays;
     private String specialNotes;
     private String justification;
-
+    private BigDecimal totalValue;
     private String departmentName;
+    private String documentPath;
     private String mprTypeName;
     private String tenderTypeName;
     private List<MprDetailResponnce> mprDetailResponnces;
 }
-

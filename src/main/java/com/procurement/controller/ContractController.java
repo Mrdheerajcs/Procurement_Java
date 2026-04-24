@@ -46,4 +46,11 @@ public class ContractController {
                 .orElseThrow(() -> new RuntimeException("Contract not found"));
         return ResponseUtil.success(contract, "Contract retrieved");
     }
+
+    @GetMapping("/all")
+    public ResponseEntity<ApiResponse<List<Contract>>> getAllContracts() {
+        log.info("Fetching all contracts");
+        List<Contract> contracts = contractRepository.findAll();
+        return ResponseUtil.success(contracts, "All contracts retrieved");
+    }
 }

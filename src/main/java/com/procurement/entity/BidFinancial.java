@@ -32,9 +32,9 @@ public class BidFinancial {
     @JoinColumn(name = "bid_technical_id", nullable = false)
     private BidTechnical bidTechnical;
 
-    // 🔥 Financial Data (ENCRYPTED in database)
+    // Encrypted Financial Data
     @Column(nullable = false, columnDefinition = "TEXT")
-    private String encryptedTotalBidAmount;  // AES encrypted
+    private String encryptedTotalBidAmount;
 
     @Column(columnDefinition = "TEXT")
     private String encryptedGstPercent;
@@ -59,37 +59,25 @@ public class BidFinancial {
 
     private String emdExemptionDetails;
 
-    // 🔥 BOQ Data (encrypted JSON)
-    @Column(columnDefinition = "LONGTEXT")
-    private String encryptedBoqData;
-
-    // 🔥 Document paths
-    private String financialDocPath;
+    // ✅ Financial Document paths
     private String boqFilePath;
+    private String priceBreakupPath;
+    private String emdReceiptPath;
+    private String otherFinancialDocsPath;
 
-    // 🔥 Status
-    private String isRevealed = "NO";  // YES/NO - whether price is revealed
+    // Status
+    private String isRevealed = "NO";
     private String revealedBy;
     private LocalDateTime revealedAt;
 
-    // 🔥 Decrypted values (transient - not stored in DB)
-    @Transient
-    private BigDecimal decryptedTotalBidAmount;
-    @Transient
-    private BigDecimal decryptedGstPercent;
-    @Transient
-    private BigDecimal decryptedTotalCost;
-    @Transient
-    private String decryptedBankName;
-    @Transient
-    private String decryptedAccountNumber;
-    @Transient
-    private String decryptedIfscCode;
-    @Transient
-    private String decryptedEmdNumber;
-    @Transient
-    private BigDecimal decryptedEmdValue;
-
     private LocalDateTime submittedAt;
     private LocalDateTime updatedAt;
+
+    // Helper method
+    public void setAuditFields(String username, boolean isNew) {
+        if (isNew) {
+            this.submittedAt = LocalDateTime.now();
+        }
+        this.updatedAt = LocalDateTime.now();
+    }
 }

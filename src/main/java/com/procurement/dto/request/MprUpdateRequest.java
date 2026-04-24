@@ -1,18 +1,18 @@
 package com.procurement.dto.request;
 
-import com.procurement.dto.responce.MprDetailDTO;
+import com.procurement.dto.responce.MprDetailUpdateDTO;
 import lombok.Getter;
 import lombok.Setter;
-
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+
 @Getter
 @Setter
 public class MprUpdateRequest {
     private Long mprId;
     private String mprNo;
     private LocalDate mprDate;
-    // Foreign Keys (Only IDs in DTO)
     private Long departmentId;
     private Long mprTypeId;
     private Long tenderTypeId;
@@ -23,7 +23,8 @@ public class MprUpdateRequest {
     private Integer durationDays;
     private String specialNotes;
     private String justification;
-    //private String status;
-    private List<MprDetailDTO> details;
-    private List<Long> deleteDetailIds; // delete ke liye
+    private BigDecimal totalValue;
+    private List<MprDetailUpdateDTO> details;
+    private List<Long> deleteDetailIds;
 }
+

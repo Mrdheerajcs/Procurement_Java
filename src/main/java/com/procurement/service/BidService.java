@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 public interface BidService {
     ResponseEntity<ApiResponse<BidTechnicalResponse>> submitTechnicalBid(BidTechnicalRequest request, MultipartFile[] files);
@@ -47,4 +48,8 @@ public interface BidService {
 
     ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getMyBids();
     ResponseEntity<ApiResponse<BidTechnicalResponse>> withdrawBid(Long bidTechnicalId, String reason);
+
+    ResponseEntity<ApiResponse<BidFinancialResponse>> saveFinancialDraft(BidFinancialRequest request, MultipartFile[] files);
+    ResponseEntity<ApiResponse<BidFinancialResponse>> getFinancialDraft(Long tenderId);
+    ResponseEntity<ApiResponse<Map<String, Object>>> getBidDocuments(Long bidTechnicalId);
 }

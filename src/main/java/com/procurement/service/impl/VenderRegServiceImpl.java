@@ -18,14 +18,17 @@ import com.procurement.service.VendorRegService;
 import com.procurement.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -42,23 +45,21 @@ public class VenderRegServiceImpl implements VendorRegService {
     private final PasswordEncoder passwordEncoder;
     private final VendorFeeConfig feeConfig;
     private final JavaMailSender mailSender;
-
     private final VendorPaymentRepository paymentRepository;
+
+    @Value("${app.upload.base-dir:C:/uploads}")
+    private String baseDir;
 
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<VenderDto>> venReg(VenderRegRequest request) {
-
         log.info("Starting vendor registration...");
 
-        // 1. Duplicate email check
         if (userRepository.findByEmail(request.getEmailId()).isPresent()) {
             throw new RuntimeException("Email already registered");
         }
 
-        // 2. Fee check
         if (feeConfig.isEnabled()) {
-
             VendorPayment payment = paymentRepository
                     .findTopByEmailOrderByPaymentIdDesc(request.getEmailId())
                     .orElseThrow(() -> new RuntimeException("Please complete payment before registration"));
@@ -74,25 +75,18 @@ public class VenderRegServiceImpl implements VendorRegService {
             log.info("Payment verified for: {}", request.getEmailId());
         }
 
-        // 3. Generate vendor code
         String vendorCode = generateVendorCodeSafe();
         log.info("Generated Vendor Code: {}", vendorCode);
 
-        // 4. Generate password (using mobile)
         String rawPassword = request.getMobileNo();
         String passwordHint = generatePasswordHint(rawPassword);
 
-        // 5. Map entity
         Vendor vendor = venderMapper.toEntity(request);
-
-        // 🔥 IMPORTANT: force set AFTER mapping
         vendor.setVendorCode(vendorCode);
 
-        // 6. Role
         Role role = roleRepository.findById(3L)
                 .orElseThrow(() -> new RuntimeException("ROLE_VENDOR not found"));
 
-        // 7. Create user
         User user = new User();
         user.setUsername(request.getEmailId());
         user.setEmail(request.getEmailId());
@@ -104,49 +98,33 @@ public class VenderRegServiceImpl implements VendorRegService {
 
         userRepository.save(user);
 
-        // 8. Save vendor
         vendor.setUserId(user.getUserId());
         vendor.setAuditFields("self", true);
-
         vendorRepository.save(vendor);
 
-        // 9. Send email (SAFE)
         try {
-            sendVendorEmail(
-                    user.getEmail(),
-                    user.getUsername(),
-                    vendorCode,
-                    passwordHint
-            );
+            sendVendorEmail(user.getEmail(), user.getUsername(), vendorCode, passwordHint);
         } catch (Exception e) {
             log.error("Email sending failed: {}", e.getMessage());
         }
 
         log.info("Vendor registration completed");
 
-        return ResponseUtil.success(
-                venderMapper.toDto(vendor),
-                "Vendor registered successfully"
-        );
+        return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor registered successfully");
     }
 
-    // ================= UPDATE =================
-
-    @Override
     @Transactional
-    public ResponseEntity<ApiResponse<VenderDto>> updateVendor(Long vendorId, VenderRegRequest request) {
+    @Override
+    public ResponseEntity<ApiResponse<VenderDto>> updateVendor(Long vendorId, VenderRegRequest request, MultipartFile profilePic) {
+        log.info("Updating vendor ID: {}", vendorId);
 
         Vendor vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
-        // ❌ DO NOT update vendorCode
-
         vendor.setVendorName(request.getVendorName());
-        vendor.setVendorTypeId(request.getVendorTypeId());
         vendor.setContactPerson(request.getContactPerson());
         vendor.setMobileNo(request.getMobileNo());
         vendor.setAlternateMobile(request.getAlternateMobile());
-        vendor.setEmailId(request.getEmailId());
         vendor.setAddressLine1(request.getAddressLine1());
         vendor.setAddressLine2(request.getAddressLine2());
         vendor.setCity(request.getCity());
@@ -154,34 +132,55 @@ public class VenderRegServiceImpl implements VendorRegService {
         vendor.setCountry(request.getCountry());
         vendor.setPincode(request.getPincode());
         vendor.setGstNo(request.getGstNo());
-        vendor.setPanNo(request.getPanNo());
-        vendor.setDrugLicenseNo(request.getRegistrationNo());
-        vendor.setLicenseValidTill(request.getLicenseValidTill());
         vendor.setBankName(request.getBankName());
         vendor.setAccountNo(request.getAccountNo());
         vendor.setIfscCode(request.getIfscCode());
         vendor.setPaymentTermsId(request.getPaymentTermsId());
         vendor.setIsPreferred(request.getIsPreferred());
-        vendor.setIsBlacklisted(request.getIsBlacklisted());
-        vendor.setBlacklistReason(request.getBlacklistReason());
+
+        // ✅ Update profile picture using UploadConfig baseDir
+        if (profilePic != null && !profilePic.isEmpty()) {
+            String picPath = saveProfilePic(profilePic, vendor.getUserId());
+
+            // Update in User entity
+            User user = userRepository.findById(vendor.getUserId())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            user.setProfilePicPath(picPath);
+            userRepository.save(user);
+        }
 
         vendor.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), false);
-
         vendorRepository.save(vendor);
 
-        User user = userRepository.findById(vendor.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-
-        user.setUsername(request.getEmailId());
-        user.setEmail(request.getEmailId());
-
-        userRepository.save(user);
-
-        return ResponseUtil.success(
-                venderMapper.toDto(vendor),
-                "Vendor updated successfully"
-        );
+        return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor updated successfully");
     }
+
+    // ✅ FIXED: Save profile pic using UploadConfig baseDir
+    private String saveProfilePic(MultipartFile file, Long userId) {
+        try {
+            String uploadDir = baseDir + "/profiles/";
+            File dir = new File(uploadDir);
+            if (!dir.exists()) dir.mkdirs();
+
+            String originalName = file.getOriginalFilename();
+            String extension = "";
+            if (originalName != null && originalName.contains(".")) {
+                extension = originalName.substring(originalName.lastIndexOf("."));
+            }
+
+            String fileName = "user_" + userId + "_" + System.currentTimeMillis() + extension;
+            File dest = new File(dir, fileName);
+            file.transferTo(dest);
+
+            String absolutePath = dest.getAbsolutePath();
+            log.info("Profile picture saved at: {}", absolutePath);
+            return absolutePath;
+        } catch (IOException e) {
+            log.error("Error saving profile pic: {}", e.getMessage());
+            return null;
+        }
+    }
+
     @Override
     public ResponseEntity<ApiResponse<VenderDto>> getVendorById(Long vendorId) {
         Vendor vendor = vendorRepository.findById(vendorId)
@@ -201,7 +200,6 @@ public class VenderRegServiceImpl implements VendorRegService {
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<String>> deleteVendor(Long vendorId) {
-
         Vendor vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
@@ -210,14 +208,12 @@ public class VenderRegServiceImpl implements VendorRegService {
         }
 
         vendorRepository.deleteById(vendorId);
-
         return ResponseUtil.success("Vendor deleted successfully");
     }
 
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<VenderDto>> changeVendorStatus(Long vendorId, String status) {
-
         Vendor vendor = vendorRepository.findById(vendorId)
                 .orElseThrow(() -> new RuntimeException("Vendor not found"));
 
@@ -232,20 +228,12 @@ public class VenderRegServiceImpl implements VendorRegService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         boolean isActive = "Y".equalsIgnoreCase(status);
-
         user.setIsActive(isActive);
         user.setIsAccountNonLocked(isActive);
-
         userRepository.save(user);
 
-        return ResponseUtil.success(
-                venderMapper.toDto(vendor),
-                "Vendor status changed to " + vendor.getStatus()
-        );
+        return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor status changed to " + vendor.getStatus());
     }
-
-
-    // ================= HELPER METHODS =================
 
     private String generateVendorCode() {
         Long maxId = vendorRepository.findMaxVendorId();
@@ -268,15 +256,12 @@ public class VenderRegServiceImpl implements VendorRegService {
     }
 
     private void sendVendorEmail(String to, String username, String vendorCode, String passwordHint) {
-
         String subject = "Vendor Registration Successful";
-
         String body = "Dear Vendor,\n\n"
                 + "Your registration is successful.\n\n"
                 + "Username: " + username + "\n"
                 + "Vendor Code: " + vendorCode + "\n"
-                + "Password Hint: Assume your Mobile No. is 9999988888 than password is same \n"
-                + "Password Hint: " + passwordHint + "\n\n"
+                + "Password: " + passwordHint + "\n\n"
                 + "Please reset your password on first login.\n\n"
                 + "Regards,\nProcurement Team";
 

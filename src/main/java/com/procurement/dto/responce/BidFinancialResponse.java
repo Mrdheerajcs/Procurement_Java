@@ -21,4 +21,9 @@ public class BidFinancialResponse {
     private BigDecimal emdValue;
     private String emdExemptionDetails;
     private String isRevealed;
+
+    private String boqFilePath;
+    private String priceBreakupPath;
+    private String emdReceiptPath;
+    private String otherFinancialDocsPath;
 }

@@ -18,7 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -92,9 +96,49 @@ public class BidController {
     @PostMapping("/technical/draft")
     public ResponseEntity<ApiResponse<BidTechnicalResponse>> saveTechnicalDraft(
             @RequestPart("data") BidTechnicalRequest request,
-            @RequestPart(value = "files", required = false) MultipartFile[] files) {
+            @RequestPart(value = "experienceCertificate", required = false) MultipartFile experienceCertificate,
+            @RequestPart(value = "oemAuthorization", required = false) MultipartFile oemAuthorization,
+            @RequestPart(value = "gstCertificate", required = false) MultipartFile gstCertificate,
+            @RequestPart(value = "panCard", required = false) MultipartFile panCard,
+            @RequestPart(value = "msmeCertificate", required = false) MultipartFile msmeCertificate,
+            @RequestPart(value = "otherDocs", required = false) MultipartFile[] otherDocs) {
+
         log.info("API: Save technical bid as draft");
-        return bidService.saveTechnicalDraft(request, files);
+
+        List<MultipartFile> allFiles = new java.util.ArrayList<>();
+        if (experienceCertificate != null) allFiles.add(experienceCertificate);
+        if (oemAuthorization != null) allFiles.add(oemAuthorization);
+        if (gstCertificate != null) allFiles.add(gstCertificate);
+        if (panCard != null) allFiles.add(panCard);
+        if (msmeCertificate != null) allFiles.add(msmeCertificate);
+        if (otherDocs != null) {
+            allFiles.addAll(java.util.Arrays.asList(otherDocs));
+        }
+
+        log.info("Received {} files for technical draft", allFiles.size());
+        return bidService.saveTechnicalDraft(request, allFiles.toArray(new MultipartFile[0]));
+    }
+
+    @PostMapping("/financial/draft")
+    public ResponseEntity<ApiResponse<BidFinancialResponse>> saveFinancialDraft(
+            @RequestPart("data") BidFinancialRequest request,
+            @RequestPart(value = "boqFile", required = false) MultipartFile boqFile,
+            @RequestPart(value = "priceBreakup", required = false) MultipartFile priceBreakup,
+            @RequestPart(value = "emdReceipt", required = false) MultipartFile emdReceipt,
+            @RequestPart(value = "otherFinancialDocs", required = false) MultipartFile[] otherFinancialDocs) {
+
+        log.info("API: Save financial draft");
+
+        List<MultipartFile> allFiles = new ArrayList<>();
+        if (boqFile != null) allFiles.add(boqFile);
+        if (priceBreakup != null) allFiles.add(priceBreakup);
+        if (emdReceipt != null) allFiles.add(emdReceipt);
+        if (otherFinancialDocs != null) {
+            allFiles.addAll(Arrays.asList(otherFinancialDocs));
+        }
+
+        log.info("Received {} files for financial draft", allFiles.size());
+        return bidService.saveFinancialDraft(request, allFiles.toArray(new MultipartFile[0]));
     }
 
     @PostMapping("/final")
@@ -143,6 +187,12 @@ public class BidController {
         return bidService.getTechnicalDraft(tenderId);
     }
 
+    @GetMapping("/financial/draft/{tenderId}")
+    public ResponseEntity<ApiResponse<BidFinancialResponse>> getFinancialDraft(@PathVariable Long tenderId) {
+        log.info("API: Get financial draft for tender: {}", tenderId);
+        return bidService.getFinancialDraft(tenderId);
+    }
+
     @GetMapping("/vendor/pending-clarifications")
     public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getPendingClarifications() {
         log.info("API: Get pending clarifications for vendor");
@@ -167,5 +217,22 @@ public class BidController {
     public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getMyBids() {
         log.info("API: Get my bids");
         return bidService.getMyBids();
+    }
+
+    @GetMapping("/technical/documents/{bidTechnicalId}")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getBidDocuments(@PathVariable Long bidTechnicalId) {
+        log.info("API: Get bid documents for technical bid: {}", bidTechnicalId);
+        return bidService.getBidDocuments(bidTechnicalId);
+    }
+
+
+    @GetMapping("/technical/all")
+    public ResponseEntity<ApiResponse<List<BidTechnicalResponse>>> getAllTechnicalBids() {
+        log.info("API: Get all technical bids");
+        List<BidTechnical> bids = bidTechnicalRepository.findAll();
+        List<BidTechnicalResponse> responses = bids.stream()
+                .map(bidService::mapToTechnicalResponse)
+                .collect(Collectors.toList());
+        return ResponseUtil.success(responses, "All bids retrieved");
     }
 }

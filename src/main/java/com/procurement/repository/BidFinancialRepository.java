@@ -20,7 +20,14 @@ public interface BidFinancialRepository extends JpaRepository<BidFinancial, Long
 
     List<BidFinancial> findByTender(TenderHeader tender);
 
-    @Query("SELECT bf FROM BidFinancial bf WHERE bf.tender.tenderId = :tenderId AND bf.isRevealed = 'YES'")
+    // ✅ ONLY get revealed financials for NON-WITHDRAWN, QUALIFIED vendors
+    @Query("""
+        SELECT bf FROM BidFinancial bf
+        WHERE bf.tender.tenderId = :tenderId
+        AND bf.isRevealed = 'YES'
+        AND bf.bidTechnical.evaluationStatus = 'QUALIFIED'
+        AND bf.bidTechnical.submissionStatus = 'SUBMITTED'
+    """)
     List<BidFinancial> findRevealedFinancialsByTenderId(@Param("tenderId") Long tenderId);
 
     @Modifying

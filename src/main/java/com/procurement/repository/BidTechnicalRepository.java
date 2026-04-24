@@ -23,6 +23,7 @@ public interface BidTechnicalRepository extends JpaRepository<BidTechnical, Long
     Page<BidTechnical> findByTender(TenderHeader tender, Pageable pageable);
     List<BidTechnical> findByTenderAndSubmissionStatus(TenderHeader tender, String submissionStatus);
     List<BidTechnical> findByVendorAndEvaluationStatus(Vendor vendor, String evaluationStatus);
+    List<BidTechnical> findByVendor(Vendor vendor);
 
     @Query("SELECT b FROM BidTechnical b WHERE b.tender.tenderId = :tenderId AND b.evaluationStatus = 'QUALIFIED'")
     List<BidTechnical> findQualifiedBidsByTenderId(@Param("tenderId") Long tenderId);
@@ -30,5 +31,22 @@ public interface BidTechnicalRepository extends JpaRepository<BidTechnical, Long
     @Query("SELECT bt FROM BidTechnical bt WHERE bt.tender.tenderId = :tenderId")
     List<BidTechnical> findAllByTenderId(@Param("tenderId") Long tenderId);
 
-    List<BidTechnical> findByVendor(Vendor vendor);
+    // ✅ Get active bids (exclude WITHDRAWN)
+    @Query("""
+        SELECT b FROM BidTechnical b
+        WHERE b.tender = :tender
+        AND b.submissionStatus = 'SUBMITTED'
+        AND b.evaluationStatus != 'WITHDRAWN'
+    """)
+    List<BidTechnical> findActiveSubmittedBidsByTender(@Param("tender") TenderHeader tender);
+
+    // ✅ Get QUALIFIED active bids only (for financial reveal)
+    @Query("""
+        SELECT b FROM BidTechnical b
+        WHERE b.tender.tenderId = :tenderId
+        AND b.evaluationStatus = 'QUALIFIED'
+        AND b.submissionStatus = 'SUBMITTED'
+        AND b.evaluationStatus != 'WITHDRAWN'
+    """)
+    List<BidTechnical> findQualifiedActiveBids(@Param("tenderId") Long tenderId);
 }

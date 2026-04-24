@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -87,5 +88,10 @@ public class MprHeader extends BaseEntity {
         private String rejectionReason;
         private String rejectedBy;
         private LocalDateTime rejectedAt;
+        @Column(name = "total_value")
+        private BigDecimal totalValue;              // ✅ NEW - Total estimated value
 
-    }
+        @Column(name = "document_path")
+        private String documentPath;
+
+}

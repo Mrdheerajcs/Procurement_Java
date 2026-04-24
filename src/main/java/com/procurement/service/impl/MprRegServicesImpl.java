@@ -11,6 +11,7 @@ import com.procurement.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,9 @@ public class MprRegServicesImpl implements MprRegServices {
     @Autowired
     private MprDetailMapper mapper;
 
+    @Value("${app.upload.base-dir:C:/uploads}")
+    private String baseDir;
+
     @Autowired
     MprVendorMappingRepository mprVendorMappingRepository;
 
@@ -55,13 +59,17 @@ public class MprRegServicesImpl implements MprRegServices {
     @Override
     @Transactional
     public ResponseEntity<ApiResponse<MprDto>> mprReg(MprRequest request) {
+        log.info("Registering MPR with total value: {}", request.getTotalValue());
+
         MprHeader mprHeader = mprMapper.toEntity(request);
         mprHeader.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
-        mprRepository.save(mprHeader);
+        mprHeader.setTotalValue(request.getTotalValue());  // ✅ Set total value
+
+        MprHeader savedHeader = mprRepository.save(mprHeader);
+
         for (MprDetailRequest detail : request.getMprDetailRequests()) {
             MprDetail mprDetail = new MprDetail();
-            mprDetail.setMprHeader(mprRepository.findById(mprHeader.getMprId())
-                    .orElseThrow(() -> new RuntimeException("mpr header Id  not found")));
+            mprDetail.setMprHeader(savedHeader);
             mprDetail.setSlNo(detail.getSlNo());
             mprDetail.setItemCode(detail.getItemCode());
             mprDetail.setItemName(detail.getItemName());
@@ -78,13 +86,13 @@ public class MprRegServicesImpl implements MprRegServices {
             mprDetail.setCreatedAt(java.time.LocalDateTime.now());
             mprDetail.setStatus("n");
             mprDetailRepository.save(mprDetail);
-            // 3. 🔥 Vendor Mapping Logic
+
             if (detail.getVendorIds() != null && !detail.getVendorIds().isEmpty()) {
                 List<MprVendorMapping> mappings = detail.getVendorIds()
                         .stream()
                         .map(vendorId -> {
                             MprVendorMapping mapping = new MprVendorMapping();
-                            mapping.setMprId(mprHeader.getMprId());
+                            mapping.setMprId(savedHeader.getMprId());
                             mapping.setMprDetailId(mprDetail.getMprDetailId());
                             mapping.setVendorId(vendorId);
                             return mapping;
@@ -93,8 +101,10 @@ public class MprRegServicesImpl implements MprRegServices {
                 mprVendorMappingRepository.saveAll(mappings);
             }
         }
-        return ResponseUtil.success(mprMapper.toDto(mprHeader), "MPR registered successfully");
+
+        return ResponseUtil.success(mprMapper.toDto(savedHeader), "MPR registered successfully");
     }
+
     @Override
     public ResponseEntity<ApiResponse<List<MprResponse>>> getAllMprs(String status) {
         List<MprDetail> details = mprDetailRepository.findByStatusWithHeader(status);
@@ -121,6 +131,8 @@ public class MprRegServicesImpl implements MprRegServices {
                 response.setMprNo(header.getMprNo());
                 response.setMprDate(header.getMprDate());
                 response.setProjectName(header.getProjectName());
+                response.setDocumentPath(header.getDocumentPath());
+                response.setTotalValue(header.getTotalValue());
                 response.setDepartmentId(header.getDepartment().getDepartmentId());
                 response.setMprTypeId(header.getMprType().getTypeId());
                 response.setTenderTypeId(header.getTenderType().getTenderTypeId());
@@ -312,85 +324,139 @@ public class MprRegServicesImpl implements MprRegServices {
                 .collect(Collectors.toList());
         return ResponseUtil.success(null, "Batch MPR approval processed successfully");
     }
-//
+
     @Transactional
     @Override
     public ResponseEntity<ApiResponse<String>> updateMpr(MprUpdateRequest request) {
-        // ✅ 1. FETCH HEADER
+        log.info("Updating MPR with ID: {}", request.getMprId());
+
+        // 1. FETCH HEADER
         MprHeader header = mprRepository.findById(request.getMprId())
                 .orElseThrow(() -> new RuntimeException("MPR not found"));
-        // ✅ 2. UPDATE HEADER
+
+        // 2. UPDATE HEADER
         header.setMprNo(request.getMprNo());
         header.setMprDate(request.getMprDate());
         header.setProjectName(request.getProjectName());
-        header.setPriority(Priority.valueOf(request.getPriority()));
+        if (request.getPriority() != null) {
+            header.setPriority(Priority.valueOf(request.getPriority()));
+        }
         header.setRequiredByDate(request.getRequiredByDate());
         header.setDeliverySchedule(request.getDeliverySchedule());
         header.setDurationDays(request.getDurationDays());
         header.setSpecialNotes(request.getSpecialNotes());
         header.setJustification(request.getJustification());
+        if (request.getTotalValue() != null) {
+            header.setTotalValue(request.getTotalValue());
+        }
         header.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
 
-        header.setDepartment(
-                departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null)
-        );
-        header.setMprType(
-                mprTypeRepository.findById(request.getMprTypeId()).orElse(null)
-        );
-        header.setTenderType(
-                tenderTypeRepository.findById(request.getTenderTypeId()).orElse(null)
-        );
+        if (request.getDepartmentId() != null) {
+            header.setDepartment(departmentRepository.findById(request.getDepartmentId().intValue()).orElse(null));
+        }
+        if (request.getMprTypeId() != null) {
+            header.setMprType(mprTypeRepository.findById(request.getMprTypeId()).orElse(null));
+        }
+        if (request.getTenderTypeId() != null) {
+            header.setTenderType(tenderTypeRepository.findById(request.getTenderTypeId()).orElse(null));
+        }
         mprRepository.save(header);
 
+        // 3. DELETE REMOVED DETAILS
         if (request.getDeleteDetailIds() != null && !request.getDeleteDetailIds().isEmpty()) {
-
             for (Long detailId : request.getDeleteDetailIds()) {
                 mprVendorMappingRepository.deleteByMprDetailId(detailId);
             }
             mprDetailRepository.deleteAllById(request.getDeleteDetailIds());
+            log.info("Deleted details with IDs: {}", request.getDeleteDetailIds());
         }
-        for (MprDetailDTO dto : request.getDetails()) {
-            MprDetail detail;
-            if (dto.getMprDetailId() == null) {
-                detail = new MprDetail();
-                mapper.mapDtoToEntity(dto, detail);
-                detail.setMprHeader(header);
-                mprDetailRepository.save(detail);
 
-            } else {
-                detail = mprDetailRepository.findById(dto.getMprDetailId())
-                        .orElseThrow(() ->
-                                new RuntimeException("Detail not found: " + dto.getMprDetailId())
-                        );
-                mapper.mapDtoToEntity(dto, detail);
-                mprDetailRepository.save(detail);
-                mprVendorMappingRepository.deleteByMprDetailId(detail.getMprDetailId());
-            }
-            if (dto.getVendorIds() != null && !dto.getVendorIds().isEmpty()) {
-                List<MprVendorMapping> mappings = new ArrayList<>();
-                for (Long vendorId : dto.getVendorIds()) {
-                    MprVendorMapping mapping = new MprVendorMapping();
-                    mapping.setMprId(header.getMprId());
-                    mapping.setMprDetailId(detail.getMprDetailId());
-                    mapping.setVendorId(vendorId);
-                    mappings.add(mapping);
+        // 4. UPDATE OR CREATE DETAILS - ✅ USING MprDetailUpdateDTO
+        if (request.getDetails() != null && !request.getDetails().isEmpty()) {
+            for (MprDetailUpdateDTO dto : request.getDetails()) {
+                MprDetail detail;
+
+                if (dto.getMprDetailId() == null) {
+                    // CREATE NEW DETAIL
+                    detail = new MprDetail();
+                    detail.setMprHeader(header);
+                    detail.setSlNo(dto.getSlNo());
+                    detail.setItemCode(dto.getItemCode());
+                    detail.setItemName(dto.getItemName());
+                    detail.setUom(dto.getUom());
+                    detail.setSpecification(dto.getSpecificationn());  // Map from specificationn
+                    detail.setRequestedQty(dto.getRequestedQty());
+                    detail.setEstimatedRate(dto.getEstimatedRate());
+                    detail.setEstimatedValue(dto.getEstimatedValue());
+                    detail.setStockAvailable(dto.getStockAvailable());
+                    detail.setAvgMonthlyConsumption(dto.getAvgMonthlyConsumption());
+                    detail.setLastPurchaseInfo(dto.getLastPurchaseInfo());
+                    detail.setRemarks(dto.getRemarks());
+                    detail.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+                    detail.setCreatedAt(java.time.LocalDateTime.now());
+                    detail.setStatus("n");
+                    detail = mprDetailRepository.save(detail);
+                    log.info("Created new detail for MPR: {}", header.getMprId());
+                } else {
+                    // UPDATE EXISTING DETAIL
+                    detail = mprDetailRepository.findById(dto.getMprDetailId())
+                            .orElseThrow(() -> new RuntimeException("Detail not found: " + dto.getMprDetailId()));
+
+                    detail.setSlNo(dto.getSlNo());
+                    detail.setItemCode(dto.getItemCode());
+                    detail.setItemName(dto.getItemName());
+                    detail.setUom(dto.getUom());
+                    detail.setSpecification(dto.getSpecificationn());  // Map from specificationn
+                    detail.setRequestedQty(dto.getRequestedQty());
+                    detail.setEstimatedRate(dto.getEstimatedRate());
+                    detail.setEstimatedValue(dto.getEstimatedValue());
+                    detail.setStockAvailable(dto.getStockAvailable());
+                    detail.setAvgMonthlyConsumption(dto.getAvgMonthlyConsumption());
+                    detail.setLastPurchaseInfo(dto.getLastPurchaseInfo());
+                    detail.setRemarks(dto.getRemarks());
+                    detail.setAuditFields(CurrentUser.getCurrentUserOrThrow().getUsername(), true);
+                    detail = mprDetailRepository.save(detail);
+                    log.info("Updated detail ID: {} for MPR: {}", dto.getMprDetailId(), header.getMprId());
+
+                    // Delete existing vendor mappings for this detail
+                    mprVendorMappingRepository.deleteByMprDetailId(detail.getMprDetailId());
                 }
-                mprVendorMappingRepository.saveAll(mappings);
+
+                // 5. SAVE VENDOR MAPPINGS
+                if (dto.getVendorIds() != null && !dto.getVendorIds().isEmpty()) {
+                    List<MprVendorMapping> mappings = new ArrayList<>();
+                    for (Long vendorId : dto.getVendorIds()) {
+                        MprVendorMapping mapping = new MprVendorMapping();
+                        mapping.setMprId(header.getMprId());
+                        mapping.setMprDetailId(detail.getMprDetailId());
+                        mapping.setVendorId(vendorId);
+                        mappings.add(mapping);
+                    }
+                    mprVendorMappingRepository.saveAll(mappings);
+                    log.info("Saved {} vendor mappings for detail ID: {}", mappings.size(), detail.getMprDetailId());
+                }
             }
         }
+
         return ResponseUtil.success("MPR Updated Successfully");
     }
-    @Transactional
+
     @Override
-    public ResponseEntity<ApiResponse<String>> publishTender(TenderRequest request, List<MultipartFile> files) throws IOException {
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> publishTender(
+            TenderRequest request,
+            MultipartFile nitDoc,
+            MultipartFile boqDoc,
+            MultipartFile techDoc,
+            List<MultipartFile> otherDocs
+    ) throws IOException {
 
         log.info("Publishing tender for MPR ID: {}", request.getMprId());
-        log.info("Request data: {}", request);
 
+        // ================= HEADER =================
         TenderHeader header = new TenderHeader();
         header.setMprId(request.getMprId());
 
-        // Generate Tender Number if not provided
         String tenderNo = request.getTenderNo();
         if (tenderNo == null || tenderNo.isEmpty()) {
             tenderNo = "TND/" + System.currentTimeMillis();
@@ -399,52 +465,135 @@ public class MprRegServicesImpl implements MprRegServices {
 
         header.setTenderTitle(request.getTenderTitle());
         header.setTenderType(request.getTenderType());
+        header.setDepartment(request.getDepartment());
+        header.setProjectName(request.getProjectName());
+        header.setPriority(request.getPriority());
 
-        // ✅ FIX: Map closing_date to bid_end_date
+        header.setBidType(request.getBidType());
+        header.setBoqType(request.getBoqType());
+        header.setEstimatedValue(request.getEstimatedValue());
+        header.setTenderFee(request.getTenderFee());
+        header.setBidValidity(request.getBidValidity());
+
         header.setPublishDate(request.getPublishDate());
-        header.setBidEndDate(request.getClosingDate());  // closing_date -> bid_end_date
-        header.setBidStartDate(request.getPublishDate()); // Same as publish date
+        header.setBidStartDate(request.getPublishDate());
+        header.setBidEndDate(request.getClosingDate());
         header.setBidSubmissionEndTime(request.getBidSubmissionEndTime());
+
+        header.setPreBidMeetingDate(request.getPreBidDate());
+        header.setTechBidOpenDate(request.getTechBidOpenDate());
+        header.setFinBidOpenDate(request.getFinBidOpenDate());
+        header.setBidOpeningDate(request.getClosingDate());
+
         header.setEmdAmount(request.getEmdAmount());
-        header.setTenderDescription(request.getTenderDescription());
+        header.setTenderDescription(request.getDescription());
 
-        // Set additional fields
-        header.setBidOpeningDate(request.getClosingDate()); // Day after closing
-        header.setTenderStatus("PENDING_APPROVAL");  // Changed from PUBLISHED to PENDING_APPROVAL
-        header.setStatus("PENDING_APPROVAL");  // For backward compatibility
+        header.setTenderStatus("PENDING_APPROVAL");
+        header.setStatus("PENDING_APPROVAL");
 
-        // Set audit fields
         String currentUser = CurrentUser.getCurrentUserOrThrow().getUsername();
-        header.setAuditFields(currentUser,true);
+        header.setAuditFields(currentUser, true);
 
-
-        log.info("Saving tender header: {}", header);
         TenderHeader saved = headerRepo.save(header);
-        log.info("Tender saved with ID: {}", saved.getTenderId());
+        Long tenderId = saved.getTenderId();
 
-        // Save documents
-        String uploadDirPath = "C:/uploads/tenders/" + saved.getTenderId();
-        File uploadDir = new File(uploadDirPath);
-        if (!uploadDir.exists()) {
-            uploadDir.mkdirs();
+        log.info("Tender saved with ID: {}", tenderId);
+
+        // ================= FILE STORAGE =================
+        String tenderDirPath = baseDir + "/tenders/" + tenderId;
+        File tenderDir = new File(tenderDirPath);
+        if (!tenderDir.exists()) {
+            tenderDir.mkdirs();
         }
 
-        for (MultipartFile file : files) {
-            if (file.isEmpty()) continue;
+        // Save categorized files
+        saveFile(nitDoc, "NIT", tenderId, tenderDir);
+        saveFile(boqDoc, "BOQ", tenderId, tenderDir);
+        saveFile(techDoc, "TECH", tenderId, tenderDir);
 
-            String fileName = System.currentTimeMillis() + "_" + file.getOriginalFilename().replaceAll("\\s+", "_");
-            File dest = new File(uploadDir, fileName);
-            file.transferTo(dest);
-
-            TenderDocument doc = new TenderDocument();
-            doc.setTenderId(saved.getTenderId());
-            doc.setFileName(file.getOriginalFilename());
-            doc.setFilePath(dest.getAbsolutePath());
-            doc.setFileType(file.getContentType());
-            docRepo.save(doc);
+        if (otherDocs != null && !otherDocs.isEmpty()) {
+            for (MultipartFile file : otherDocs) {
+                saveFile(file, "OTHER", tenderId, tenderDir);
+            }
         }
 
         return ResponseUtil.success("Tender created successfully and submitted for approval");
+    }
+
+
+
+    private void saveFile(MultipartFile file, String category, Long tenderId, File uploadDir) throws IOException {
+
+        if (file == null || file.isEmpty()) return;
+
+        String originalName = file.getOriginalFilename();
+
+        String fileName = System.currentTimeMillis() + "_" +
+                originalName.replaceAll("\\s+", "_");
+
+        File dest = new File(uploadDir, fileName);
+        file.transferTo(dest);
+
+        TenderDocument doc = new TenderDocument();
+        doc.setTenderId(tenderId);
+        doc.setFileName(originalName);
+        doc.setFilePath(dest.getAbsolutePath());
+        doc.setFileType(file.getContentType());
+        doc.setDocCategory(category); // ⭐ IMPORTANT
+
+        docRepo.save(doc);
+
+        log.info("Saved {} document: {}", category, originalName);
+    }
+
+    @Override
+    @Transactional
+    public void updateDocumentPath(Long mprId, String documentPath) {
+        log.info("Updating document path for MPR: {}", mprId);
+        MprHeader header = mprRepository.findById(mprId)
+                .orElseThrow(() -> new RuntimeException("MPR not found with id: " + mprId));
+        header.setDocumentPath(documentPath);
+        mprRepository.save(header);
+    }
+
+
+    // Add this method to MprRegServicesImpl.java
+
+    @Override
+    public ResponseEntity<ApiResponse<List<MprDocumentDto>>> getMprDocuments(Long mprId) {
+        log.info("Fetching documents for MPR: {}", mprId);
+
+        MprHeader header = mprRepository.findById(mprId)
+                .orElseThrow(() -> new RuntimeException("MPR not found"));
+
+        String documentPath = header.getDocumentPath();
+        List<MprDocumentDto> documents = new ArrayList<>();
+
+        if (documentPath != null && !documentPath.isEmpty()) {
+            String[] paths = documentPath.split(",");
+            for (String path : paths) {
+                File file = new File(path.trim());
+                if (file.exists()) {
+                    documents.add(MprDocumentDto.builder()
+                            .fileName(file.getName())
+                            .filePath(file.getAbsolutePath())
+                            .fileType(getFileExtension(file.getName()))
+                            .fileSize(file.length())
+                            .build());
+                }
+            }
+        }
+
+        return ResponseUtil.success(documents, "Documents retrieved successfully");
+    }
+
+    private String getFileExtension(String fileName) {
+        if (fileName == null) return "unknown";
+        int lastDot = fileName.lastIndexOf(".");
+        if (lastDot > 0) {
+            return fileName.substring(lastDot + 1).toLowerCase();
+        }
+        return "unknown";
     }
 
 }

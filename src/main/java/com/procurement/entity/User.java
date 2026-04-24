@@ -24,6 +24,9 @@ public class User {
     private Boolean isAccountNonLocked = true;
     private Boolean isPasswordChanged = false;
 
+    @Column(name = "profile_pic_path")
+    private String profilePicPath;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role_map",

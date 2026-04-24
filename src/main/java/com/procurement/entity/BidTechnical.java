@@ -2,7 +2,6 @@ package com.procurement.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -29,7 +28,7 @@ public class BidTechnical {
     @JoinColumn(name = "vendor_id", nullable = false)
     private Vendor vendor;
 
-    // 🔥 Technical Evaluation Fields
+    // Technical Evaluation Fields
     @Column(nullable = false)
     private String companyName;
 
@@ -40,7 +39,7 @@ public class BidTechnical {
     private String panNumber;
 
     @Column(nullable = false)
-    private String makeIndiaClass;  // Class 1, Class 2
+    private String makeIndiaClass;
 
     @Column(nullable = false)
     private BigDecimal bidderTurnover;
@@ -54,16 +53,21 @@ public class BidTechnical {
     @Column(nullable = false, length = 1000)
     private String authorizationDetails;
 
-    private String submissionStatus;  // DRAFT, SUBMITTED, FINAL
+    private String submissionStatus;  // DRAFT, SUBMITTED
 
     private String msmeNumber;
     private Boolean isMsme = false;
 
-    private String technicalDocPath;
-    private String experienceDocPath;
-    private String certificationDocPath;
+    // ✅ Document paths (categorized)
+    private String experienceCertPath;
+    private String oemAuthPath;
+    private String gstCertPath;
+    private String panCardPath;
+    private String msmeCertPath;
+    private String otherDocsPath;
 
-    private String evaluationStatus;  // PENDING, QUALIFIED, DISQUALIFIED, CLARIFICATION_NEEDED
+    // Evaluation fields
+    private String evaluationStatus;  // PENDING, QUALIFIED, DISQUALIFIED, CLARIFICATION_NEEDED, WITHDRAWN
     private Integer evaluationScore;
     private String evaluationRemarks;
     private String evaluatedBy;
@@ -72,15 +76,20 @@ public class BidTechnical {
     private LocalDateTime submittedAt;
     private LocalDateTime updatedAt;
 
-
+    // Clarification fields
+    private String clarificationRequired;
+    private String clarificationQuestion;
+    private LocalDateTime clarificationDeadline;
+    private String vendorResponse;
+    private LocalDateTime respondedAt;
+    private Integer resubmissionCount;
     private String clarificationDocumentPath;
 
-
-    // Clarification fields
-    private String clarificationRequired;     // YES/NO
-    private String clarificationQuestion;     // Question asked to vendor
-    private LocalDateTime clarificationDeadline;  // When vendor must respond
-    private String vendorResponse;            // Vendor's response
-    private LocalDateTime respondedAt;        // When vendor responded
-    private Integer resubmissionCount;        // How many times resubmitted
+    // Helper method
+    public void setAuditFields(String username, boolean isNew) {
+        if (isNew) {
+            this.submittedAt = LocalDateTime.now();
+        }
+        this.updatedAt = LocalDateTime.now();
+    }
 }

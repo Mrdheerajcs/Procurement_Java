@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -23,7 +24,6 @@ import java.util.List;
 public class VendorController {
 
     private final VendorRegService vendorRegService;
-
     private final VenderMapper venderMapper;
     private final VendorRepository vendorRepository;
 
@@ -33,10 +33,13 @@ public class VendorController {
         return vendorRegService.venReg(request);
     }
 
-    @PutMapping("/{vendorId}")
-    public ResponseEntity<ApiResponse<VenderDto>> updateVendor(@PathVariable Long vendorId, @RequestBody VenderRegRequest request) {
-        log.info("Updating vendor ID: {}", vendorId);
-        return vendorRegService.updateVendor(vendorId, request);
+    @PutMapping(value = "/{vendorId}", consumes = {"multipart/form-data"})
+    public ResponseEntity<ApiResponse<VenderDto>> updateVendor(
+            @PathVariable Long vendorId,
+            @RequestPart("data") VenderRegRequest request,
+            @RequestPart(value = "profilePic", required = false) MultipartFile profilePic) {
+        log.info("Updating vendor ID: {} with profile pic: {}", vendorId, profilePic != null);
+        return vendorRegService.updateVendor(vendorId, request, profilePic);
     }
 
     @GetMapping("/{vendorId}")
@@ -71,5 +74,4 @@ public class VendorController {
                 .orElseThrow(() -> new RuntimeException("Vendor not found for user: " + username));
         return ResponseUtil.success(venderMapper.toDto(vendor), "Vendor profile retrieved");
     }
-
 }

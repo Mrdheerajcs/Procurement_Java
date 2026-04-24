@@ -23,21 +23,32 @@ public class TenderHeader extends BaseEntity {
 
     private String nitNumber;
     private String tenderTitle;
-    private String tenderType;  // ✅ ADD THIS - Open/Limited/Single/Global
+    private String tenderType;
     private String tenderCategory;
     private String department;
     private String projectName;
     private String priority;
+
+    // 🔥 NEW - Bid Configuration Fields
+    private String bidType;           // Single Bid / Two Bid
+    private String boqType;           // Item Rate / Lump Sum
+    private BigDecimal estimatedValue; // Estimated tender value
+    private BigDecimal tenderFee;      // Tender fee amount
+    private Integer bidValidity;       // Bid validity in days
 
     // Tender Timeline Fields
     private LocalDate publishDate;
     private LocalDate bidStartDate;
     private LocalDate bidEndDate;
     private LocalTime bidEndTime;
-    private LocalTime bidSubmissionEndTime;  // ✅ ADD THIS
+    private LocalTime bidSubmissionEndTime;
     private LocalDate bidOpeningDate;
     private LocalTime bidOpeningTime;
     private LocalDate preBidMeetingDate;
+
+    // 🔥 NEW - Separate opening dates for two-bid system
+    private LocalDate techBidOpenDate;   // Technical bid opening date
+    private LocalDate finBidOpenDate;    // Financial bid opening date
 
     // Financial Fields
     private BigDecimal tenderFeeAmount;
@@ -49,14 +60,14 @@ public class TenderHeader extends BaseEntity {
     private String tenderDescription;
     private String documentPath;
 
-
     // Status Fields
-    private String tenderStatus; // DRAFT, PENDING_APPROVAL, APPROVED, REJECTED, PUBLISHED, CLOSED, AWARDED
+    private String tenderStatus;
     private String approvedBy;
     private LocalDateTime approvedAt;
     private String publishedBy;
     private LocalDateTime publishedAt;
     private String rejectionReason;
     private LocalDateTime rejectedAt;
-    private String status;  // ✅ ADD THIS - For backward compatibility
+    private String status;  // For backward compatibility
+
 }

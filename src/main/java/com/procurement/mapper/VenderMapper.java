@@ -1,54 +1,20 @@
 package com.procurement.mapper;
 
-import com.procurement.dto.responce.VenderDto;
 import com.procurement.dto.request.VenderRegRequest;
+import com.procurement.dto.responce.VenderDto;
 import com.procurement.entity.Vendor;
 import org.springframework.stereotype.Component;
 
 @Component
 public class VenderMapper {
 
-    public Vendor toEntity(VenderRegRequest request) {
-        if(request == null) return null;
-
-        Vendor vendor = new Vendor();
-        vendor.setVendorCode(request.getVendorCode());
-        vendor.setVendorName(request.getVendorName());
-        vendor.setVendorTypeId(request.getVendorTypeId());
-        vendor.setContactPerson(request.getContactPerson());
-        vendor.setMobileNo(request.getMobileNo());
-        vendor.setAlternateMobile(request.getAlternateMobile());
-        vendor.setEmailId(request.getEmailId());
-        vendor.setAddressLine1(request.getAddressLine1());
-        vendor.setAddressLine2(request.getAddressLine2());
-        vendor.setCity(request.getCity());
-        vendor.setState(request.getState());
-        vendor.setCountry(request.getCountry());
-        vendor.setPincode(request.getPincode());
-        vendor.setGstNo(request.getGstNo());
-        vendor.setPanNo(request.getPanNo());
-        vendor.setDrugLicenseNo(request.getRegistrationNo());
-        vendor.setLicenseValidTill(request.getLicenseValidTill());
-        vendor.setBankName(request.getBankName());
-        vendor.setAccountNo(request.getAccountNo());
-        vendor.setIfscCode(request.getIfscCode());
-        vendor.setPaymentTermsId(request.getPaymentTermsId());
-        vendor.setIsPreferred(request.getIsPreferred());
-        vendor.setIsBlacklisted(request.getIsBlacklisted());
-        vendor.setBlacklistReason(request.getBlacklistReason());
-        vendor.setStatus("Y"); // default status
-
-        return vendor;
-    }
-
     public VenderDto toDto(Vendor vendor) {
-        if(vendor == null) return null;
+        if (vendor == null) return null;
 
         VenderDto dto = new VenderDto();
         dto.setVendorId(vendor.getVendorId());
         dto.setVendorCode(vendor.getVendorCode());
         dto.setVendorName(vendor.getVendorName());
-        dto.setVendorTypeId(vendor.getVendorTypeId());
         dto.setContactPerson(vendor.getContactPerson());
         dto.setMobileNo(vendor.getMobileNo());
         dto.setAlternateMobile(vendor.getAlternateMobile());
@@ -71,10 +37,39 @@ public class VenderMapper {
         dto.setIsBlacklisted(vendor.getIsBlacklisted());
         dto.setBlacklistReason(vendor.getBlacklistReason());
         dto.setStatus(vendor.getStatus());
-        dto.setCreatedBy(vendor.getCreatedBy());
-        dto.setUpdatedBy(vendor.getUpdatedBy());
-        dto.setLastUpdatedDt(vendor.getLastUpdatedDt());
 
         return dto;
+    }
+
+    public Vendor toEntity(VenderRegRequest request) {
+        if (request == null) return null;
+
+        Vendor vendor = new Vendor();
+        vendor.setVendorName(request.getVendorName());
+        vendor.setContactPerson(request.getContactPerson());
+        vendor.setMobileNo(request.getMobileNo());
+        vendor.setAlternateMobile(request.getAlternateMobile());
+        vendor.setEmailId(request.getEmailId());
+        vendor.setAddressLine1(request.getAddressLine1());
+        vendor.setAddressLine2(request.getAddressLine2());
+        vendor.setCity(request.getCity());
+        vendor.setState(request.getState());
+        vendor.setCountry(request.getCountry());
+        vendor.setPincode(request.getPincode());
+        vendor.setGstNo(request.getGstNo());
+        vendor.setPanNo(request.getPanNo());
+        vendor.setDrugLicenseNo(request.getRegistrationNo());
+        vendor.setLicenseValidTill(request.getLicenseValidTill());
+        vendor.setBankName(request.getBankName());
+        vendor.setAccountNo(request.getAccountNo());
+        vendor.setIfscCode(request.getIfscCode());
+        vendor.setPaymentTermsId(request.getPaymentTermsId());
+        vendor.setIsPreferred(request.getIsPreferred());
+        vendor.setIsBlacklisted(request.getIsBlacklisted());
+        vendor.setBlacklistReason(request.getBlacklistReason());
+        vendor.setVendorTypeId(request.getVendorTypeId());
+        vendor.setStatus("Y");
+
+        return vendor;
     }
 }

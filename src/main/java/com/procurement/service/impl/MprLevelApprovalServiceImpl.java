@@ -14,6 +14,9 @@ import com.procurement.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,7 +34,6 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
     private final MprApprovalHistoryRepository historyRepository;
     private final AuditService auditService;
 
-    // Approval levels in order
     private static final String[] APPROVAL_LEVELS = {"MANAGER", "FINANCE", "DIRECTOR"};
     private static final String STATUS_PENDING = "PENDING";
     private static final String STATUS_APPROVED = "APPROVED";
@@ -53,13 +55,14 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
         }
 
         // Check current status
-        if (mpr.getApprovalStatus() != null && !"DRAFT".equals(mpr.getApprovalStatus())) {
+        if (mpr.getApprovalStatus() != null && !"DRAFT".equals(mpr.getApprovalStatus()) && !"REJECTED".equals(mpr.getApprovalStatus())) {
             return ResponseUtil.error("MPR already submitted for approval");
         }
 
         // Set initial approval status
         mpr.setApprovalStatus(STATUS_PENDING);
         mpr.setApprovalLevel("MANAGER");
+        mpr.setStatus("PENDING_APPROVAL");  // ✅ Set status for pending approval
         mprRepository.save(mpr);
 
         // Save history
@@ -84,7 +87,7 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
 
         // Verify user has correct role for current approval level
         if (!canApproveAtLevel(mpr, currentRole)) {
-            return ResponseUtil.error("You are not authorized to approve at this level");
+            return ResponseUtil.error("You are not authorized to approve at this level. Required: " + getRoleForLevel(mpr.getApprovalLevel()));
         }
 
         // Update based on current level
@@ -113,7 +116,7 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
                 mpr.setRemarksLevel3(request.getRemarks());
                 mpr.setApprovalStatus(STATUS_APPROVED);
                 mpr.setApprovalLevel("COMPLETED");
-                mpr.setStatus("a");  // Final approved status for tender creation
+                mpr.setStatus("a");  // ✅ Final approved status for tender creation
                 saveHistory(mpr, "APPROVED", currentUser, request.getRemarks());
                 break;
 
@@ -176,6 +179,8 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
         MprApprovalStatusResponse response = new MprApprovalStatusResponse();
         response.setMprId(mpr.getMprId());
         response.setMprNo(mpr.getMprNo());
+        response.setDepartmentName(mpr.getDepartment() != null ? mpr.getDepartment().getDepartmentName() : null);
+        response.setProjectName(mpr.getProjectName());
 
         // Set current status
         if (STATUS_APPROVED.equals(mpr.getApprovalStatus())) {
@@ -184,6 +189,7 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
         } else if (STATUS_REJECTED.equals(mpr.getApprovalStatus())) {
             response.setCurrentLevel(mpr.getApprovalLevel());
             response.setCurrentStatus("REJECTED");
+            response.setRejectionReason(mpr.getRejectionReason());
         } else {
             response.setCurrentLevel(mpr.getApprovalLevel());
             response.setCurrentStatus(STATUS_PENDING);
@@ -225,14 +231,22 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
 
         String level = getLevelForRole(role);
         if (level == null) {
+            log.warn("No level found for role: {}", role);
             return ResponseUtil.success(new ArrayList<>(), "No pending approvals for this role");
         }
 
+        // Fetch MPRs that are pending at this level
         List<MprHeader> pendingMprs = mprRepository.findByApprovalStatusAndApprovalLevel(STATUS_PENDING, level);
 
-        List<MprApprovalStatusResponse> responses = pendingMprs.stream()
-                .map(mpr -> getApprovalStatus(mpr.getMprId()).getBody().getData())
-                .collect(Collectors.toList());
+        log.info("Found {} pending MPRs for level: {}", pendingMprs.size(), level);
+
+        List<MprApprovalStatusResponse> responses = new ArrayList<>();
+        for (MprHeader mpr : pendingMprs) {
+            ResponseEntity<ApiResponse<MprApprovalStatusResponse>> statusResp = getApprovalStatus(mpr.getMprId());
+            if (statusResp.getBody() != null && statusResp.getBody().getData() != null) {
+                responses.add(statusResp.getBody().getData());
+            }
+        }
 
         return ResponseUtil.success(responses, "Pending approvals retrieved");
     }
@@ -253,6 +267,12 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
 
     private boolean canApproveAtLevel(MprHeader mpr, String userRole) {
         String requiredLevel = mpr.getApprovalLevel();
+
+        // If MPR is already fully approved or rejected, don't allow further action
+        if ("COMPLETED".equals(requiredLevel) || STATUS_REJECTED.equals(mpr.getApprovalStatus())) {
+            return false;
+        }
+
         String requiredRole = getRoleForLevel(requiredLevel);
         return requiredRole != null && requiredRole.equals(userRole);
     }
@@ -275,11 +295,16 @@ public class MprLevelApprovalServiceImpl implements MprLevelApprovalService {
         }
     }
 
+    // ✅ FIXED: Get current user role from Security Context
     private String getCurrentUserRole() {
-        // Get from Spring Security context
-        // For now, return based on username (simplified)
-        String username = CurrentUser.getCurrentUserOrThrow().getUsername();
-        // You should implement proper role extraction
-        return "ROLE_MANAGER"; // Placeholder
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null) {
+            return auth.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .filter(role -> role.startsWith("ROLE_"))
+                    .findFirst()
+                    .orElse("ROLE_USER");
+        }
+        return "ROLE_USER";
     }
 }

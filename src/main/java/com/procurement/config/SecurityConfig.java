@@ -51,18 +51,16 @@ public class SecurityConfig {
                         .requestMatchers(
                                 new AntPathRequestMatcher("/auth/**"),
                                 new AntPathRequestMatcher("/api/master/**"),
-                                new AntPathRequestMatcher("/api/vendors/**"),
                                 new AntPathRequestMatcher("/api/config/**"),
                                 new AntPathRequestMatcher("/api/payment/**"),
-                                new AntPathRequestMatcher("/public/**")
+                                new AntPathRequestMatcher("/public/**"),
+                                new AntPathRequestMatcher("/api/landing/**")
+
+
                         ).permitAll()
 
-                        // Swagger access
-                        .requestMatchers(
-                                new AntPathRequestMatcher("/swagger-ui/**"),
-                                new AntPathRequestMatcher("/v3/api-docs/**"),
-                                new AntPathRequestMatcher("/api-docs/**")
-                        ).permitAll()
+                        // ✅ Allow file download with authentication
+                        .requestMatchers(new AntPathRequestMatcher("/api/files/download/**")).authenticated()
 
                         .anyRequest().authenticated()
                 );
@@ -71,7 +69,6 @@ public class SecurityConfig {
 
         return http.build();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();

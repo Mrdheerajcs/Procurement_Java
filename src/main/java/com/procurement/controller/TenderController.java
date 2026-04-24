@@ -1,15 +1,9 @@
 package com.procurement.controller;
 
 import com.procurement.dto.responce.ApiResponse;
-import com.procurement.entity.BidTechnical;
-import com.procurement.entity.Contract;
-import com.procurement.entity.TenderHeader;
-import com.procurement.entity.Vendor;
+import com.procurement.entity.*;
 import com.procurement.helper.CurrentUser;
-import com.procurement.repository.BidTechnicalRepository;
-import com.procurement.repository.ContractRepository;
-import com.procurement.repository.TenderHeaderRepository;
-import com.procurement.repository.VendorRepository;
+import com.procurement.repository.*;
 import com.procurement.service.AuditService;
 import com.procurement.service.EmailService;
 import com.procurement.util.ResponseUtil;
@@ -38,6 +32,8 @@ public class TenderController {
     private final VendorRepository vendorRepository;
 
     private final BidTechnicalRepository bidTechnicalRepository;
+
+    private final TenderDocumentRepository tenderDocumentRepository;
 
 
     @GetMapping("/published")
@@ -290,5 +286,13 @@ public class TenderController {
                 null, "Awarded to vendor: " + vendorId);
 
         return ResponseUtil.success("Contract awarded successfully to vendor", "Success");
+    }
+
+    // Get all documents for a tender
+    @GetMapping("/{tenderId}/documents")
+    public ResponseEntity<ApiResponse<List<TenderDocument>>> getTenderDocuments(@PathVariable Long tenderId) {
+        log.info("Fetching documents for tender: {}", tenderId);
+        List<TenderDocument> documents = tenderDocumentRepository.findByTenderId(tenderId);
+        return ResponseUtil.success(documents, "Documents retrieved");
     }
 }

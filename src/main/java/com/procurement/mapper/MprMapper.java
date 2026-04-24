@@ -33,35 +33,33 @@ public class MprMapper {
         mprHeader.setDurationDays(request.getDurationDays());
         mprHeader.setSpecialNotes(request.getSpecialNotes());
         mprHeader.setJustification(request.getJustification());
+        mprHeader.setTotalValue(request.getTotalValue());  // ✅ NEW
         mprHeader.setStatus("Y");
         mprHeader.setCreatedAt(java.time.LocalDateTime.now());
 
-        // ✅ FIX: Convert Integer to Long safely
-        Integer deptId = request.getDepartmentId() != null ? request.getDepartmentId() : null;
-        if (deptId != null) {
+        if (request.getDepartmentId() != null) {
             mprHeader.setDepartment(
-                    departmentRepository.findById(deptId)
-                            .orElseThrow(() -> new RuntimeException("Department not found for ID: " + deptId))
+                    departmentRepository.findById((int) request.getDepartmentId().longValue())
+                            .orElseThrow(() -> new RuntimeException("Department not found"))
             );
         }
 
         if (request.getMprTypeId() != null) {
             mprHeader.setMprType(
-                    mprTypeRepository.findById(Long.valueOf(request.getMprTypeId()))
-                            .orElseThrow(() -> new RuntimeException("MPR Type not found for ID: " + request.getMprTypeId()))
+                    mprTypeRepository.findById(request.getMprTypeId().longValue())
+                            .orElseThrow(() -> new RuntimeException("MPR Type not found"))
             );
         }
 
         if (request.getTenderTypeId() != null) {
             mprHeader.setTenderType(
-                    tenderTypeRepository.findById(Long.valueOf(request.getTenderTypeId()))
-                            .orElseThrow(() -> new RuntimeException("Tender Type not found for ID: " + request.getTenderTypeId()))
+                    tenderTypeRepository.findById(request.getTenderTypeId().longValue())
+                            .orElseThrow(() -> new RuntimeException("Tender Type not found"))
             );
         }
 
         return mprHeader;
     }
-
     public MprDto toDto(MprHeader mprHeader) {
         if (mprHeader == null) return null;
 
@@ -69,19 +67,9 @@ public class MprMapper {
         dto.setMprId(mprHeader.getMprId());
         dto.setMprNo(mprHeader.getMprNo());
         dto.setMprDate(mprHeader.getMprDate());
-
-        dto.setDepartmentId(
-                mprHeader.getDepartment() != null ? mprHeader.getDepartment().getDepartmentId() : null
-        );
-
-        dto.setMprTypeId(
-                mprHeader.getMprType() != null ? mprHeader.getMprType().getTypeId() : null
-        );
-
-        dto.setTenderTypeId(
-                mprHeader.getTenderType() != null ? mprHeader.getTenderType().getTenderTypeId() : null
-        );
-
+        dto.setDepartmentId(mprHeader.getDepartment() != null ? mprHeader.getDepartment().getDepartmentId() : null);
+        dto.setMprTypeId(mprHeader.getMprType() != null ? mprHeader.getMprType().getTypeId() : null);
+        dto.setTenderTypeId(mprHeader.getTenderType() != null ? mprHeader.getTenderType().getTenderTypeId() : null);
         dto.setProjectName(mprHeader.getProjectName());
         dto.setPriority(String.valueOf(mprHeader.getPriority()));
         dto.setRequiredByDate(mprHeader.getRequiredByDate());
@@ -89,6 +77,7 @@ public class MprMapper {
         dto.setDurationDays(mprHeader.getDurationDays());
         dto.setSpecialNotes(mprHeader.getSpecialNotes());
         dto.setJustification(mprHeader.getJustification());
+        dto.setTotalValue(mprHeader.getTotalValue());  // ✅ NEW
         dto.setStatus(mprHeader.getStatus());
         dto.setLastUpdatedDt(mprHeader.getLastUpdatedDt());
 
