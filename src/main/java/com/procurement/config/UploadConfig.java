@@ -21,6 +21,8 @@ public class UploadConfig {
         createDirectory(baseDir + "/clarification");
         createDirectory(baseDir + "/mpr");
         createDirectory(baseDir + "/profiles");
+        createDirectory(baseDir + "/contracts");
+        createDirectory(baseDir + "/contracts/pbg");
     }
 
     private void createDirectory(String path) {

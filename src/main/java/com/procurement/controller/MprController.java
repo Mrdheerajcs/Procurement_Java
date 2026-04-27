@@ -2,7 +2,9 @@ package com.procurement.controller;
 
 import com.procurement.dto.request.*;
 import com.procurement.dto.responce.*;
+import com.procurement.repository.MprRepository;
 import com.procurement.service.MprRegServices;
+import com.procurement.util.ResponseUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +26,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MprController {
     private final MprRegServices mprRegServices;
+
+    private final MprRepository mprRepository;
 
     @Value("${app.upload.base-dir:C:/uploads}")
     private String baseDir;
@@ -142,5 +146,27 @@ public class MprController {
             @RequestPart(value = "otherDocs", required = false) List<MultipartFile> otherDocs) throws IOException {
 
         return mprRegServices.publishTender(request, nitDoc, boqDoc, techDoc, otherDocs);
+    }
+
+    // Check duplicate MPR number
+    @GetMapping("/check-duplicate")
+    public ResponseEntity<ApiResponse<Boolean>> checkDuplicateMprNo(@RequestParam String mprNo) {
+        boolean exists = mprRepository.existsByMprNo(mprNo);
+        return ResponseUtil.success(exists);
+    }
+
+    // Generate unique MPR number
+    @GetMapping("/generate-number")
+    public ResponseEntity<ApiResponse<String>> generateMprNumber() {
+        String year = String.valueOf(java.time.Year.now().getValue());
+        String month = String.format("%02d", java.time.LocalDate.now().getMonthValue());
+        String prefix = "MPR/" + year + "/" + month + "/";
+
+        // Get last sequence for this month
+        Long lastNumber = mprRepository.getLastSequenceForPrefix(prefix);
+        long nextSeq = (lastNumber == null) ? 1 : lastNumber + 1;
+
+        String mprNo = prefix + String.format("%05d", nextSeq);
+        return ResponseUtil.success(mprNo);
     }
 }

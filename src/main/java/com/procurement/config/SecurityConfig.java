@@ -48,34 +48,33 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // ✅ Public endpoints
                         .requestMatchers(
                                 new AntPathRequestMatcher("/auth/**"),
                                 new AntPathRequestMatcher("/api/master/**"),
                                 new AntPathRequestMatcher("/api/config/**"),
                                 new AntPathRequestMatcher("/api/payment/**"),
                                 new AntPathRequestMatcher("/public/**"),
-                                new AntPathRequestMatcher("/api/landing/**")
-
-
+                                new AntPathRequestMatcher("/api/landing/**"),
+                                // ✅ IMPORTANT: Allow OPTIONS preflight requests for all endpoints
+                                new AntPathRequestMatcher("/**", "OPTIONS")
                         ).permitAll()
-
-                        // ✅ Allow file download with authentication
-                        .requestMatchers(new AntPathRequestMatcher("/api/files/download/**")).authenticated()
-
                         .anyRequest().authenticated()
                 );
 
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
         return http.build();
     }
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("*")); // or restrict to "http://103.133.215.182:8081"
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type"));
+        configuration.setAllowedOrigins(List.of("http://localhost:3000", "http://localhost:3001", "http://103.133.215.182:8081"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
         configuration.setExposedHeaders(List.of("Authorization"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Cache preflight for 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

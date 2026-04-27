@@ -24,6 +24,7 @@ public class MprDto {
     private String specialNotes;
     private String justification;
     private String status;
+    private String documentPath;
 
 
     private BigDecimal totalValue;

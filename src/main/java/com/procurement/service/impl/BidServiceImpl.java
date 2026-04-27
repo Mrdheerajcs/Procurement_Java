@@ -493,35 +493,8 @@ public class BidServiceImpl implements BidService {
         return ResponseUtil.success(responses, "Financial bids revealed successfully");
     }
 
-    @Override
-    public ResponseEntity<ApiResponse<List<BidFinancialResponse>>> getL1Vendors(Long tenderId) {
-        log.info("Calculating L1 for tender: {}", tenderId);
 
-        List<BidFinancial> revealedBids =
-                bidFinancialRepository.findRevealedFinancialsByTenderId(tenderId);
 
-        // ✅ extra safety filter (important)
-        List<BidFinancial> filteredBids = revealedBids.stream()
-                .filter(b -> b.getBidTechnical() == null
-                        || !"WITHDRAWN".equals(b.getBidTechnical().getEvaluationStatus()))
-                .collect(Collectors.toList());
-
-        if (filteredBids.isEmpty()) {
-            return ResponseUtil.success(new ArrayList<>(), "No valid bids found");
-        }
-
-        List<BidFinancialResponse> responses = filteredBids.stream()
-                .map(this::mapToFinancialResponse)
-                .sorted(Comparator.comparing(BidFinancialResponse::getTotalCost))
-                .collect(Collectors.toList());
-
-        // L1 mark
-        if (!responses.isEmpty()) {
-            responses.get(0).setIsRevealed("L1");
-        }
-
-        return ResponseUtil.success(responses, "L1 vendors calculated successfully");
-    }
     // ==================== GETTERS ====================
 
     @Override
@@ -1077,5 +1050,38 @@ public class BidServiceImpl implements BidService {
         response.setEmdExemptionDetails(entity.getEmdExemptionDetails());
         response.setIsRevealed(entity.getIsRevealed());
         return response;
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse<List<BidFinancialResponse>>> getL1Vendors(Long tenderId) {
+        log.info("Calculating L1/L2/L3 for tender: {}", tenderId);
+
+        // Get all revealed financial bids (all ranks)
+        List<BidFinancial> allRevealed = bidFinancialRepository.findRevealedFinancialsByTenderId(tenderId);
+
+        // Filter out WITHDRAWN
+        List<BidFinancial> validBids = allRevealed.stream()
+                .filter(b -> b.getBidTechnical().getEvaluationStatus().equals("QUALIFIED"))
+                .collect(Collectors.toList());
+
+        if (validBids.isEmpty()) {
+            return ResponseUtil.success(new ArrayList<>(), "No results available yet");
+        }
+
+        // Decrypt and sort by total cost (ascending)
+        List<BidFinancialResponse> responses = validBids.stream()
+                .map(this::mapToFinancialResponse)
+                .sorted(Comparator.comparing(BidFinancialResponse::getTotalCost))
+                .collect(Collectors.toList());
+
+        // Calculate L1, L2, L3
+        for (int i = 0; i < responses.size(); i++) {
+            if (i == 0) responses.get(i).setIsRevealed("L1");
+            else if (i == 1) responses.get(i).setIsRevealed("L2");
+            else if (i == 2) responses.get(i).setIsRevealed("L3");
+            else responses.get(i).setIsRevealed("L" + (i + 1));
+        }
+
+        return ResponseUtil.success(responses, "Rankings calculated successfully");
     }
 }

@@ -1,46 +1,27 @@
-package com.procurement.entity;
+package com.procurement.dto.responce;
 
-import jakarta.persistence.*;
-import lombok.*;
+import lombok.Builder;
+import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "contract")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Data
 @Builder
-public class Contract {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class ContractDTO {
     private Long contractId;
-
-    @Column(unique = true, nullable = false)
     private String contractNo;
-
     private Long tenderId;
     private String tenderNo;
     private String tenderTitle;
-
     private Long vendorId;
     private String vendorName;
-
     private LocalDate awardDate;
     private LocalDate startDate;
     private LocalDate endDate;
-
     private BigDecimal amount;
-
-    private String status; // AWARDED, REJECTED, PENDING, SIGNED
-
-    private String pbgPath; // ✅ NEW: Performance Bank Guarantee path
-
+    private String status;
+    private String pbgPath;
     private String createdBy;
     private LocalDateTime createdAt;
-
-    private LocalDateTime updatedAt;
 }

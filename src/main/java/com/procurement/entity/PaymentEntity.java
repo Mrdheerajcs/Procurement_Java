@@ -1,33 +1,40 @@
 package com.procurement.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
+import lombok.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "vendor_payment")
+@Table(name = "payment_transactions")
 @Getter
 @Setter
-public class VendorPayment {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PaymentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentId;
 
-    private String email;
-    private Double amount;
-    private String status; // PENDING, SUCCESS
-
-    private String transactionId;
-
-    // ✅ Add these fields for Razorpay integration
     private String razorpayOrderId;
     private String razorpayPaymentId;
     private String razorpaySignature;
 
-    private String paymentType; // VENDOR_REGISTRATION, TENDER_FEE, EMD
+    private Long tenderId;
+    private Long contractId;
+    private Long vendorId;
+    private String vendorEmail;
+    private String vendorName;
+
+    private String paymentType;
+    private BigDecimal amount;
+    private String currency;
+
+    private String status;
+    private String receipt;
+    private String errorMessage;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

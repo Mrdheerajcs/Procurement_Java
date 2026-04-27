@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ContractRepository extends JpaRepository<Contract, Long> {
@@ -21,4 +22,13 @@ public interface ContractRepository extends JpaRepository<Contract, Long> {
 
     @Query("SELECT COUNT(c) FROM Contract c WHERE c.status = 'AWARDED' AND c.endDate BETWEEN CURRENT_DATE AND CURRENT_DATE + 90")
     long countContractsEndingInNext90Days();
+
+    Optional<Contract> findByContractNo(String contractNo);
+
+
+    List<Contract> findByStatus(String status);
+
+    List<Contract> findByTenderId(Long tenderId);
+
+    boolean existsByContractNo(String contractNo);
 }

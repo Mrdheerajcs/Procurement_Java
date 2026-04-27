@@ -8,6 +8,8 @@ import com.procurement.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 public class MprMapper {
 
@@ -21,9 +23,11 @@ public class MprMapper {
     private MprTypeRepository mprTypeRepository;
 
     public MprHeader toEntity(MprRequest request) {
+
         if (request == null) return null;
 
         MprHeader mprHeader = new MprHeader();
+
         mprHeader.setMprNo(request.getMprNo());
         mprHeader.setMprDate(request.getMprDate());
         mprHeader.setProjectName(request.getProjectName());
@@ -33,9 +37,14 @@ public class MprMapper {
         mprHeader.setDurationDays(request.getDurationDays());
         mprHeader.setSpecialNotes(request.getSpecialNotes());
         mprHeader.setJustification(request.getJustification());
-        mprHeader.setTotalValue(request.getTotalValue());  // ✅ NEW
+
+        mprHeader.setTotalValue(request.getTotalValue());
+
+        // ✅ 🔥 THIS WAS MISSING
+        mprHeader.setDocumentPath(request.getDocumentPath());
+
         mprHeader.setStatus("Y");
-        mprHeader.setCreatedAt(java.time.LocalDateTime.now());
+        mprHeader.setCreatedAt(LocalDateTime.now());
 
         if (request.getDepartmentId() != null) {
             mprHeader.setDepartment(
@@ -66,6 +75,7 @@ public class MprMapper {
         MprDto dto = new MprDto();
         dto.setMprId(mprHeader.getMprId());
         dto.setMprNo(mprHeader.getMprNo());
+        dto.setDocumentPath(mprHeader.getDocumentPath());
         dto.setMprDate(mprHeader.getMprDate());
         dto.setDepartmentId(mprHeader.getDepartment() != null ? mprHeader.getDepartment().getDepartmentId() : null);
         dto.setMprTypeId(mprHeader.getMprType() != null ? mprHeader.getMprType().getTypeId() : null);
