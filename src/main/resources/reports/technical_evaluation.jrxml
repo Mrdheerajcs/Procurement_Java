@@ -1,0 +1,220 @@
+<!--<?xml version="1.0" encoding="UTF-8"?>-->
+<!--<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"-->
+<!--              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"-->
+<!--              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"-->
+<!--              name="tender_summary" pageWidth="842" pageHeight="595" orientation="Landscape"-->
+<!--              columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20"-->
+<!--              whenResourceMissingType="Empty">-->
+
+<!--    <parameter name="startDate" class="java.lang.String"/>-->
+<!--    <parameter name="endDate" class="java.lang.String"/>-->
+<!--    <parameter name="department" class="java.lang.String"/>-->
+<!--    <parameter name="generatedBy" class="java.lang.String"/>-->
+<!--    <parameter name="companyLogo" class="java.lang.String"/>-->
+
+<!--    <queryString>-->
+<!--        <![CDATA[-->
+<!--            SELECT-->
+<!--                t.tender_id as tenderId,-->
+<!--                t.tender_no as tenderNo,-->
+<!--                t.tender_title as tenderTitle,-->
+<!--                t.department as department,-->
+<!--                t.estimated_value as estimatedValue,-->
+<!--                t.publish_date as publishDate,-->
+<!--                t.bid_end_date as bidEndDate,-->
+<!--                t.tender_status as tenderStatus,-->
+<!--                (SELECT COUNT(*) FROM bid_technical bt WHERE bt.tender_id = t.tender_id AND bt.submission_status = 'SUBMITTED') as totalBids,-->
+<!--                (SELECT COUNT(*) FROM bid_technical bt WHERE bt.tender_id = t.tender_id AND bt.evaluation_status = 'QUALIFIED') as qualifiedBids-->
+<!--            FROM tender_header t-->
+<!--            WHERE 1=1-->
+<!--            AND ($P{startDate} IS NULL OR t.publish_date >= CAST($P{startDate} AS DATE))-->
+<!--            AND ($P{endDate} IS NULL OR t.publish_date <= CAST($P{endDate} AS DATE))-->
+<!--            AND ($P{department} IS NULL OR t.department = $P{department})-->
+<!--            ORDER BY t.publish_date DESC-->
+<!--        ]]>-->
+<!--    </queryString>-->
+
+<!--    <field name="tenderId" class="java.lang.Long"/>-->
+<!--    <field name="tenderNo" class="java.lang.String"/>-->
+<!--    <field name="tenderTitle" class="java.lang.String"/>-->
+<!--    <field name="department" class="java.lang.String"/>-->
+<!--    <field name="estimatedValue" class="java.math.BigDecimal"/>-->
+<!--    <field name="publishDate" class="java.sql.Date"/>-->
+<!--    <field name="bidEndDate" class="java.sql.Date"/>-->
+<!--    <field name="tenderStatus" class="java.lang.String"/>-->
+<!--    <field name="totalBids" class="java.lang.Long"/>-->
+<!--    <field name="qualifiedBids" class="java.lang.Long"/>-->
+
+<!--    <title>-->
+<!--        <band height="80">-->
+<!--            <staticText>-->
+<!--                <reportElement x="0" y="0" width="802" height="40" forecolor="#003366"/>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="22" isBold="true"/>-->
+<!--                <text><![CDATA[TENDER SUMMARY REPORT]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="0" y="40" width="802" height="15"/>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10"/>-->
+<!--                <text><![CDATA[Generated on: ]]></text>-->
+<!--            </staticText>-->
+<!--            <textField>-->
+<!--                <reportElement x="100" y="40" width="150" height="15"/>-->
+<!--                <textFieldExpression><![CDATA[new java.util.Date().toString()]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <staticText>-->
+<!--                <reportElement x="600" y="40" width="80" height="15"/>-->
+<!--                <textElement textAlignment="Right"/>-->
+<!--                <text><![CDATA[Department: ]]></text>-->
+<!--            </staticText>-->
+<!--            <textField>-->
+<!--                <reportElement x="680" y="40" width="120" height="15"/>-->
+<!--                <textFieldExpression><![CDATA[$P{department} == null ? "All" : $P{department}]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--        </band>-->
+<!--    </title>-->
+
+<!--    <columnHeader>-->
+<!--        <band height="30">-->
+<!--            <staticText>-->
+<!--                <reportElement x="0" y="0" width="30" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box>-->
+<!--                    <topPen lineWidth="0.5"/>-->
+<!--                    <leftPen lineWidth="0.5"/>-->
+<!--                    <bottomPen lineWidth="0.5"/>-->
+<!--                    <rightPen lineWidth="0.5"/>-->
+<!--                </box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[S.No]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="30" y="0" width="100" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Tender No]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="130" y="0" width="200" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Title]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="330" y="0" width="80" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Department]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="410" y="0" width="80" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Est. Value]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="490" y="0" width="70" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Publish Date]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="560" y="0" width="70" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Deadline]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="630" y="0" width="60" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Status]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="690" y="0" width="50" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Total]]></text>-->
+<!--            </staticText>-->
+<!--            <staticText>-->
+<!--                <reportElement x="740" y="0" width="62" height="25" backcolor="#003366" forecolor="#FFFFFF"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>-->
+<!--                <text><![CDATA[Qualified]]></text>-->
+<!--            </staticText>-->
+<!--        </band>-->
+<!--    </columnHeader>-->
+
+<!--    <detail>-->
+<!--        <band height="25">-->
+<!--            <textField>-->
+<!--                <reportElement x="0" y="0" width="30" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="30" y="0" width="100" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{tenderNo}]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="130" y="0" width="200" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{tenderTitle}]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="330" y="0" width="80" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{department} == null ? "-" : $F{department}]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="410" y="0" width="80" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Right" fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA["₹ " + ($F{estimatedValue} == null ? "0" : $F{estimatedValue}.toString())]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="490" y="0" width="70" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{publishDate} == null ? "-" : new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{publishDate})]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="560" y="0" width="70" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{bidEndDate} == null ? "-" : new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{bidEndDate})]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="630" y="0" width="60" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{tenderStatus}]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="690" y="0" width="50" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{totalBids} == null ? "0" : $F{totalBids}.toString()]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--            <textField>-->
+<!--                <reportElement x="740" y="0" width="62" height="20"/>-->
+<!--                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>-->
+<!--                <textFieldExpression><![CDATA[$F{qualifiedBids} == null ? "0" : $F{qualifiedBids}.toString()]]></textFieldExpression>-->
+<!--            </textField>-->
+<!--        </band>-->
+<!--    </detail>-->
+
+<!--    <summary>-->
+<!--        <band height="40">-->
+<!--            <staticText>-->
+<!--                <reportElement x="0" y="10" width="802" height="20"/>-->
+<!--                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>-->
+<!--                <text><![CDATA[*** End of Report ***]]></text>-->
+<!--            </staticText>-->
+<!--        </band>-->
+<!--    </summary>-->
+<!--</jasperReport>-->
