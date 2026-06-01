@@ -1,220 +1,370 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
-              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
-              name="tender_summary" pageWidth="842" pageHeight="595" orientation="Landscape"
-              columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20"
-              whenResourceMissingType="Empty">
-
-    <parameter name="startDate" class="java.lang.String"/>
-    <parameter name="endDate" class="java.lang.String"/>
-    <parameter name="department" class="java.lang.String"/>
-    <parameter name="generatedBy" class="java.lang.String"/>
-    <parameter name="companyLogo" class="java.lang.String"/>
-
-    <queryString>
-        <![CDATA[
-            SELECT
-                t.tender_id as tenderId,
-                t.tender_no as tenderNo,
-                t.tender_title as tenderTitle,
-                t.department as department,
-                t.estimated_value as estimatedValue,
-                t.publish_date as publishDate,
-                t.bid_end_date as bidEndDate,
-                t.tender_status as tenderStatus,
-                (SELECT COUNT(*) FROM bid_technical bt WHERE bt.tender_id = t.tender_id AND bt.submission_status = 'SUBMITTED') as totalBids,
-                (SELECT COUNT(*) FROM bid_technical bt WHERE bt.tender_id = t.tender_id AND bt.evaluation_status = 'QUALIFIED') as qualifiedBids
-            FROM tender_header t
-            WHERE 1=1
-            AND ($P{startDate} IS NULL OR t.publish_date >= CAST($P{startDate} AS DATE))
-            AND ($P{endDate} IS NULL OR t.publish_date <= CAST($P{endDate} AS DATE))
-            AND ($P{department} IS NULL OR t.department = $P{department})
-            ORDER BY t.publish_date DESC
-        ]]>
-    </queryString>
-
-    <field name="tenderId" class="java.lang.Long"/>
-    <field name="tenderNo" class="java.lang.String"/>
-    <field name="tenderTitle" class="java.lang.String"/>
-    <field name="department" class="java.lang.String"/>
-    <field name="estimatedValue" class="java.math.BigDecimal"/>
-    <field name="publishDate" class="java.sql.Date"/>
-    <field name="bidEndDate" class="java.sql.Date"/>
-    <field name="tenderStatus" class="java.lang.String"/>
-    <field name="totalBids" class="java.lang.Long"/>
-    <field name="qualifiedBids" class="java.lang.Long"/>
-
-    <title>
-        <band height="80">
-            <staticText>
-                <reportElement x="0" y="0" width="802" height="40" forecolor="#003366"/>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="22" isBold="true"/>
-                <text><![CDATA[TENDER SUMMARY REPORT]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="0" y="40" width="802" height="15"/>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10"/>
-                <text><![CDATA[Generated on: ]]></text>
-            </staticText>
-            <textField>
-                <reportElement x="100" y="40" width="150" height="15"/>
-                <textFieldExpression><![CDATA[new java.util.Date().toString()]]></textFieldExpression>
-            </textField>
-            <staticText>
-                <reportElement x="600" y="40" width="80" height="15"/>
-                <textElement textAlignment="Right"/>
-                <text><![CDATA[Department: ]]></text>
-            </staticText>
-            <textField>
-                <reportElement x="680" y="40" width="120" height="15"/>
-                <textFieldExpression><![CDATA[$P{department} == null ? "All" : $P{department}]]></textFieldExpression>
-            </textField>
-        </band>
-    </title>
-
-    <columnHeader>
-        <band height="30">
-            <staticText>
-                <reportElement x="0" y="0" width="30" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box>
-                    <topPen lineWidth="0.5"/>
-                    <leftPen lineWidth="0.5"/>
-                    <bottomPen lineWidth="0.5"/>
-                    <rightPen lineWidth="0.5"/>
-                </box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[S.No]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="30" y="0" width="100" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Tender No]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="130" y="0" width="200" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Title]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="330" y="0" width="80" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Department]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="410" y="0" width="80" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Est. Value]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="490" y="0" width="70" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Publish Date]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="560" y="0" width="70" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Deadline]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="630" y="0" width="60" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Status]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="690" y="0" width="50" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Total]]></text>
-            </staticText>
-            <staticText>
-                <reportElement x="740" y="0" width="62" height="25" backcolor="#003366" forecolor="#FFFFFF"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="10" isBold="true"/>
-                <text><![CDATA[Qualified]]></text>
-            </staticText>
-        </band>
-    </columnHeader>
-
-    <detail>
-        <band height="25">
-            <textField>
-                <reportElement x="0" y="0" width="30" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$V{REPORT_COUNT}]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="30" y="0" width="100" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{tenderNo}]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="130" y="0" width="200" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{tenderTitle}]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="330" y="0" width="80" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{department} == null ? "-" : $F{department}]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="410" y="0" width="80" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Right" fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA["₹ " + ($F{estimatedValue} == null ? "0" : $F{estimatedValue}.toString())]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="490" y="0" width="70" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{publishDate} == null ? "-" : new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{publishDate})]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="560" y="0" width="70" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{bidEndDate} == null ? "-" : new java.text.SimpleDateFormat("dd/MM/yyyy").format($F{bidEndDate})]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="630" y="0" width="60" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{tenderStatus}]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="690" y="0" width="50" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{totalBids} == null ? "0" : $F{totalBids}.toString()]]></textFieldExpression>
-            </textField>
-            <textField>
-                <reportElement x="740" y="0" width="62" height="20"/>
-                <box><topPen lineWidth="0.5"/><leftPen lineWidth="0.5"/><bottomPen lineWidth="0.5"/><rightPen lineWidth="0.5"/></box>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>
-                <textFieldExpression><![CDATA[$F{qualifiedBids} == null ? "0" : $F{qualifiedBids}.toString()]]></textFieldExpression>
-            </textField>
-        </band>
-    </detail>
-
-    <summary>
-        <band height="40">
-            <staticText>
-                <reportElement x="0" y="10" width="802" height="20"/>
-                <textElement textAlignment="Center" fontName="DejaVu Sans" size="9"/>
-                <text><![CDATA[*** End of Report ***]]></text>
-            </staticText>
-        </band>
-    </summary>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="tender_summary" pageWidth="842" pageHeight="595" orientation="Landscape" whenNoDataType="NoDataSection" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="a74fe694-024c-40ef-b8f5-94fb460927b8">
+	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="procurement_db"/>
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<property name="com.jaspersoft.studio.unit." value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+	<parameter name="start_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="end_date" class="java.util.Date">
+		<defaultValueExpression><![CDATA[new Date()]]></defaultValueExpression>
+	</parameter>
+	<parameter name="department" class="java.lang.String"/>
+	<parameter name="path" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[select
+t.tender_id as tenderId,
+t.tender_no as tenderNo,
+t.tender_title as tenderTitle,
+t.department as department,
+t.estimated_value as estimatedValue,
+t.publish_date as publishDate,
+t.bid_end_date as bidEndDate,
+t.tender_status as tenderStatus,
+(select count(*) from bid_technical bt where bt.tender_id = t.tender_id
+and bt.submission_status = 'SUBMITTED') as totalBids,
+(select count(*) from bid_technical bt where bt.tender_id = t.tender_id
+and bt.evaluation_status = 'QUALIFIED') as qualifiedBids
+from publish_tender_header t
+where (cast($P{start_date} as date) is null or t.publish_date >= cast($P{start_date} AS DATE))
+and (cast($P{end_date}  as date) is null or t.publish_date <= cast($P{end_date} AS DATE))
+and ($P{department} is null or t.department = $P{department})]]>
+	</queryString>
+	<field name="tenderid" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="tenderid"/>
+		<property name="com.jaspersoft.studio.field.label" value="tenderid"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="tenderno" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="tenderno"/>
+		<property name="com.jaspersoft.studio.field.label" value="tenderno"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="tendertitle" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="tendertitle"/>
+		<property name="com.jaspersoft.studio.field.label" value="tendertitle"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="department" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="department"/>
+		<property name="com.jaspersoft.studio.field.label" value="department"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="estimatedvalue" class="java.math.BigDecimal">
+		<property name="com.jaspersoft.studio.field.name" value="estimatedvalue"/>
+		<property name="com.jaspersoft.studio.field.label" value="estimatedvalue"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="publishdate" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="publishdate"/>
+		<property name="com.jaspersoft.studio.field.label" value="publishdate"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="bidenddate" class="java.sql.Date">
+		<property name="com.jaspersoft.studio.field.name" value="bidenddate"/>
+		<property name="com.jaspersoft.studio.field.label" value="bidenddate"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="tenderstatus" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.name" value="tenderstatus"/>
+		<property name="com.jaspersoft.studio.field.label" value="tenderstatus"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="publish_tender_header"/>
+	</field>
+	<field name="totalbids" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="totalbids"/>
+		<property name="com.jaspersoft.studio.field.label" value="totalbids"/>
+	</field>
+	<field name="qualifiedbids" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.name" value="qualifiedbids"/>
+		<property name="com.jaspersoft.studio.field.label" value="qualifiedbids"/>
+	</field>
+	<variable name="S.No." class="java.lang.Integer" calculation="Count">
+		<variableExpression><![CDATA[new Integer(0)]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="49" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="2" width="802" height="28" uuid="4add3f8c-038e-4429-b9b8-e9812e3023fd"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tender Summary Report]]></text>
+			</staticText>
+			<image scaleImage="RealSize">
+				<reportElement x="20" y="0" width="209" height="49" uuid="c262ada4-c264-4cd0-95f2-5405355a571c"/>
+				<imageExpression><![CDATA[$P{path}]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="20">
+			<staticText>
+				<reportElement x="566" y="6" width="80" height="14" uuid="3aac0e70-d5f8-495e-8c9e-96673c1461c6"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Generated On]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="646" y="6" width="7" height="14" uuid="8ed75e4c-da75-446e-993e-78fd1770c777"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" isBold="true"/>
+				</textElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="657" y="6" width="141" height="14" uuid="87b2bbf7-7e13-4ea0-a800-087d292f866e"/>
+				<textElement textAlignment="Left">
+					<font fontName="DejaVu Sans Condensed" size="10" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[new SimpleDateFormat("dd/MM/yyyy hh:mm a").format(new Date()).toUpperCase()]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="25" splitType="Stretch">
+			<line>
+				<reportElement key="line-1" x="0" y="3" width="1" height="21" uuid="f83ad760-cd38-401d-af72-67c730f6e3e9"/>
+			</line>
+			<staticText>
+				<reportElement x="4" y="7" width="32" height="13" uuid="8e7f3f5d-52bd-49e8-a38e-a28db492403f"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[S. No.]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="38" y="3" width="1" height="21" uuid="6d1b2edd-e2a2-4f02-abca-faaf89b89465"/>
+			</line>
+			<line>
+				<reportElement x="0" y="3" width="802" height="1" uuid="db3eee38-9816-4e0e-bcb5-fb92a6ce0e77"/>
+			</line>
+			<line>
+				<reportElement x="0" y="24" width="802" height="1" uuid="b84c93cb-1cf6-4148-ab56-a9edd3b84ef9"/>
+			</line>
+			<staticText>
+				<reportElement x="45" y="7" width="65" height="13" uuid="3e5a0fc7-c07f-401d-9321-90295e75133c"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tender No]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="116" y="3" width="1" height="21" uuid="64dff642-e566-4a9d-b39d-7c2ac4dddddd"/>
+			</line>
+			<staticText>
+				<reportElement x="122" y="7" width="87" height="13" uuid="e9d8b9b9-1f95-4886-9f51-7b1f401f9b16"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tender Name]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="214" y="3" width="1" height="21" uuid="d5f7c960-99be-435e-86b9-26af2fe18463"/>
+			</line>
+			<staticText>
+				<reportElement x="220" y="7" width="70" height="13" uuid="8d6a7da9-b718-418f-9ebb-0382e3409772"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Department]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="295" y="3" width="1" height="21" uuid="967cd5d2-7b6b-477f-9c89-6d7f90de70dc"/>
+			</line>
+			<staticText>
+				<reportElement x="299" y="7" width="87" height="13" uuid="868bd1cc-d3ce-4d5e-9e82-2e383b7ec32e"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Estimated Value]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="395" y="7" width="75" height="13" uuid="992d6088-7e40-48ce-bb3f-7934c81d62b2"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Publish Date]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="389" y="3" width="1" height="21" uuid="bbb9457a-7316-407e-a455-e54d110e1895"/>
+			</line>
+			<staticText>
+				<reportElement x="483" y="7" width="75" height="13" uuid="122a1026-c64e-435c-becf-083f70545b6a"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Biden Date]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="474" y="3" width="1" height="21" uuid="68792ec2-b9be-43c1-9f45-bfe2fe9d1fb2"/>
+			</line>
+			<staticText>
+				<reportElement x="567" y="7" width="79" height="13" uuid="502c7500-7d3e-41ad-8504-7862c9ac80e9"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Tender Status]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="652" y="7" width="58" height="13" uuid="391edaa2-25f3-4bac-98e0-df65f9a5017a"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Total Bids]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="720" y="7" width="74" height="13" uuid="7522abc9-6dcf-49e2-810d-a4db370cb87d"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="true"/>
+				</textElement>
+				<text><![CDATA[Qualified Bids]]></text>
+			</staticText>
+			<line>
+				<reportElement key="line-35" x="561" y="3" width="1" height="21" uuid="4140be0b-bc1d-4211-b883-72279ffe3634"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="649" y="3" width="1" height="21" uuid="f3e3b6d1-a0a7-4d01-a006-82d270554191"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="714" y="3" width="1" height="21" uuid="409b2614-bf5d-4f3a-b826-a8435b50bf7b"/>
+			</line>
+			<line>
+				<reportElement key="line-35" x="801" y="3" width="1" height="21" uuid="765e78a1-3e7f-4aef-8380-b641d87a7e49"/>
+			</line>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="20" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement x="4" y="3" width="32" height="13" uuid="e8781907-12d6-46de-802b-7902fa9bd1aa"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$V{S.No.}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-1" stretchType="RelativeToBandHeight" x="0" y="-18" width="1" height="37" uuid="b3cf73e5-64ac-4dda-b314-9596e73cc3a2"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="720" y="3" width="74" height="13" uuid="14b78c5a-ecaf-49be-a3fc-5db11e96293c"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{qualifiedbids}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="567" y="3" width="79" height="13" uuid="6ff5161b-abf5-44a3-8a88-fcd317400a42"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tenderstatus}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="299" y="3" width="87" height="13" uuid="8d0db880-3391-4511-8a2e-ec5bc8f13039"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{estimatedvalue}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="652" y="3" width="58" height="13" uuid="c841db6d-81dd-4e43-a5ac-5a723cdbbfb1"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{totalbids}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="474" y="-18" width="1" height="37" uuid="f234afe0-b545-4a59-8514-a2d2bd1510d8"/>
+			</line>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="801" y="-18" width="1" height="37" uuid="7a53648b-6a20-4df2-b084-c4732ff1ccca"/>
+			</line>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="389" y="-18" width="1" height="37" uuid="f31b8566-b91d-4ac8-9eee-7c841ecbd265"/>
+			</line>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="714" y="-18" width="1" height="37" uuid="6bb46564-27b6-4990-8ab3-d4979640253a"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="483" y="3" width="75" height="13" uuid="a4e37192-c491-4ad1-9130-0380ae8c896d"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{bidenddate}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="38" y="-18" width="1" height="37" uuid="38a0ca4c-d167-47ce-bcb1-6a0eef77c058"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="122" y="3" width="87" height="13" uuid="23386bd2-d12a-4c53-b088-b863a2c8110c"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tendertitle}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="220" y="3" width="70" height="13" uuid="f5a292ce-fd08-46ea-adb8-7c0305bd606a"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{department}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="214" y="-18" width="1" height="37" uuid="c7278549-719e-4509-b5df-11db506df515"/>
+			</line>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="116" y="-18" width="1" height="37" uuid="5d4ca235-efcf-48a1-a734-aff684d8729a"/>
+			</line>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="45" y="3" width="65" height="13" uuid="4a36bfc7-fd3b-4f05-a570-efe6c1dfc479"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{tenderno}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="295" y="-18" width="1" height="37" uuid="99cbe1b5-d9d1-45a0-91b3-f595b1b01fca"/>
+			</line>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="561" y="-18" width="1" height="37" uuid="760e7626-f092-432b-95eb-5c057d28a5ed"/>
+			</line>
+			<textField textAdjust="StretchHeight" pattern="dd/MM/yyyy">
+				<reportElement x="395" y="3" width="75" height="13" uuid="dc397b82-f21c-4095-8470-0c3e8a42c975"/>
+				<textElement>
+					<font fontName="SansSerif" isBold="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{publishdate}]]></textFieldExpression>
+			</textField>
+			<line>
+				<reportElement key="line-35" stretchType="RelativeToBandHeight" x="649" y="-18" width="1" height="37" uuid="77b3e5b2-1609-45ff-88c8-9973bb4b4092"/>
+			</line>
+			<line>
+				<reportElement positionType="Float" x="0" y="19" width="802" height="1" uuid="238974fe-0116-4d4f-9bad-e459f156d83d"/>
+			</line>
+		</band>
+	</detail>
+	<noData>
+		<band height="20">
+			<staticText>
+				<reportElement x="0" y="2" width="802" height="18" uuid="411cf62d-a4c3-489d-9005-1fe9a6c76c07"/>
+				<textElement textAlignment="Center">
+					<font fontName="DejaVu Sans Condensed" size="14" isBold="true"/>
+				</textElement>
+				<text><![CDATA[NO DATA FOUND]]></text>
+			</staticText>
+		</band>
+	</noData>
 </jasperReport>
